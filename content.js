@@ -263,11 +263,15 @@ async function startAutoConnect(settings = {}) {
         for (const btn of buttons) {
             if (!isConnecting) break;
 
-            const limitModal = document.querySelector('.artdeco-modal');
-            if (limitModal && limitModal.innerText.includes('reached your weekly limit')) {
-                log('⛔ Weekly limit reached! Stopping.', 'WARNING');
-                isConnecting = false;
-                break;
+            // Enhanced Limit Check (Modals & Toasts)
+            const limitElement = document.querySelector('.artdeco-modal') || document.querySelector('div[role="alert"]') || document.querySelector('.artdeco-toast');
+            if (limitElement) {
+                const text = limitElement.innerText.toLowerCase();
+                if (text.includes('reached the weekly limit') || text.includes('reached your weekly limit') || text.includes('invitation was not sent')) {
+                    log('⛔ Weekly limit detected! Stopping.', 'WARNING');
+                    isConnecting = false;
+                    break;
+                }
             }
 
             const card = btn.closest('.artdeco-card, li, div[class*="discover-entity-type-card"], .artdeco-modal__content li');
@@ -286,7 +290,20 @@ async function startAutoConnect(settings = {}) {
             connectCount++;
             chrome.runtime.sendMessage({ action: 'updateConnectCount', count: connectCount });
 
-            await sleep(delay * 1000);
+            // Post-click check (catch immediate toasts/modals)
+            await sleep(2000);
+            const postClickCheck = document.querySelector('.artdeco-modal') || document.querySelector('div[role="alert"]') || document.querySelector('.artdeco-toast');
+            if (postClickCheck) {
+                const text = postClickCheck.innerText.toLowerCase();
+                if (text.includes('reached the weekly limit') || text.includes('reached your weekly limit') || text.includes('invitation was not sent')) {
+                    log('⛔ Weekly limit detected immediately! Stopping.', 'WARNING');
+                    isConnecting = false;
+                    break;
+                }
+            }
+
+            // Wait remaining time
+            if (delay > 2) await sleep((delay - 2) * 1000);
         }
     }
 
