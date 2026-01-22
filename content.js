@@ -177,10 +177,11 @@ async function startAutomation(settings) {
     log('🎉 Automation finished or stopped.', 'INFO');
 }
 
-async function startAutoConnect() {
+async function startAutoConnect(settings = {}) {
     if (isConnecting) return;
     isConnecting = true;
-    log('🤝 Starting Refined Auto-Connect...', 'INFO');
+    const delay = parseInt(settings.connectDelay) || 10;
+    log(`🤝 Starting Refined Auto-Connect (Delay: ${delay}s)...`, 'INFO');
 
     const targetSections = [
         "People you may know based on your recent activity",
@@ -280,12 +281,12 @@ async function startAutoConnect() {
             btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
             await sleep(1000);
 
-            log(`🤝 Connecting with: ${name || 'Member'}. Waiting 30s...`, 'SUCCESS');
+            log(`🤝 Connecting with: ${name || 'Member'}. Waiting ${delay}s...`, 'SUCCESS');
             btn.click();
             connectCount++;
             chrome.runtime.sendMessage({ action: 'updateConnectCount', count: connectCount });
 
-            await sleep(30000);
+            await sleep(delay * 1000);
         }
     }
 
@@ -301,7 +302,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         isRunning = false;
         sendResponse({ status: 'stopped' });
     } else if (request.action === 'startConnect') {
-        startAutoConnect();
+        startAutoConnect(request.settings);
         sendResponse({ status: 'connecting' });
     } else if (request.action === 'stopConnect') {
         isConnecting = false;

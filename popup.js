@@ -1,7 +1,7 @@
 const fields = [
     'fullName', 'email', 'phone', 'salary', 'notice', 'maxApps',
     'keywords', 'location', 'datePosted', 'experienceLevel', 'workplaceType',
-    'under10Apps'
+    'under10Apps', 'connectDelay'
 ];
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
