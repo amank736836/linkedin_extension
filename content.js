@@ -326,6 +326,16 @@ async function startAutoCatchUp(settings = {}) {
     let scrollAttempts = 0;
     const maxScrolls = 10;
 
+    // Load processed names from Storage (Persistent Memory)
+    let processedNames = new Set();
+    try {
+        const data = await chrome.storage.local.get('catchUpProcessed');
+        if (data.catchUpProcessed) {
+            processedNames = new Set(data.catchUpProcessed);
+            log(`🧠 Loaded ${processedNames.size} known contacts from memory.`, 'INFO');
+        }
+    } catch (e) { console.error(e); }
+
     while (isCatchingUp && scrollAttempts < maxScrolls) {
 
         // 1. Find all visible Cards (more robust than just finding links)
@@ -347,7 +357,17 @@ async function startAutoCatchUp(settings = {}) {
             if (!isCatchingUp) break;
 
             const nameLines = card.innerText.split('\n');
-            const name = nameLines ? nameLines[0] : "Connection";
+            const name = nameLines ? nameLines[0].trim() : "Connection";
+
+            if (processedNames.has(name)) {
+                // log(`   ⏭️ Already processed ${name} (History). Skipping.`, 'DEBUG');
+                continue;
+            }
+
+            // Mark as seen & SAVE to storage
+            processedNames.add(name);
+            chrome.storage.local.set({ 'catchUpProcessed': Array.from(processedNames) });
+
             const cardText = card.innerText.toUpperCase();
 
             // Filter by Type (Soft check based on text)
@@ -365,9 +385,26 @@ async function startAutoCatchUp(settings = {}) {
                 likeBtn = allCardBtns.find(b => b.innerText.trim() === 'Like');
             }
 
-            // Check if already liked (heuristic: sometimes button text changes or disappears, checking existence)
-            // Check if the button is NOT "Active" (already liked) - LinkedIn usually adds 'artdeco-button--primary' or similar, or aria-pressed
-            const isLiked = likeBtn && (likeBtn.getAttribute('aria-pressed') === 'true' || likeBtn.className.includes('active'));
+            // RELIABLE CHECK: Check text color or SVG fill of the trigger button
+            // If it is "Blue" (LinkedIn Blue is usually #0a66c2), it is Liked.
+            // If it is "Grey" (rgba(0,0,0,0.6) or similar), it is Unliked.
+            let isLiked = false;
+
+            if (likeBtn) {
+                // Check 1: Aria Pressed
+                if (likeBtn.getAttribute('aria-pressed') === 'true') isLiked = true;
+
+                // Check 2: Class "active"
+                if (likeBtn.className.includes('active') || likeBtn.classList.contains('artdeco-button--primary')) isLiked = true;
+
+                // Check 3: Computed Color (The real MVP)
+                // Check 3: The "Blue Circle" (Definitive User Proof)
+                // We check the RAW HTML for the hex code of the blue circle
+                // User provided: <circle cx="12" ... fill="#378fe9">
+                if (likeBtn.innerHTML.includes('#378fe9')) {
+                    isLiked = true;
+                }
+            }
 
             if (likeBtn && !isLiked) {
                 log(`   👍 Clicking Like for ${name}...`, 'INFO');
