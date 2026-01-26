@@ -570,48 +570,48 @@ async function startAutoCatchUp(settings = {}) {
         // --- SCROLL STRATEGY ---
         log(`FINISHED VIEW. Attempting to scroll...`, 'INFO');
 
-        const previousY = window.scrollY;
+        const workspace = document.getElementById('workspace');
+        if (workspace) {
+            const previousTop = workspace.scrollTop;
 
-        // 1. Scroll Window
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            // 1. Scroll ID="workspace" to Bottom
+            log('   Usage: Scrolling "workspace" container...', 'DEBUG');
+            workspace.scrollTop = workspace.scrollHeight;
 
-        // 2. Scroll specific container (if exists)
-        const mainContainer = document.querySelector('.scaffold-layout__main');
-        if (mainContainer) {
-            mainContainer.scrollTop = mainContainer.scrollHeight;
-        }
+            await sleep(2000);
 
-        await sleep(2000);
+            // 2. Incremental Scroll (to ensure trigger)
+            workspace.scrollTop += 1000;
 
-        // 3. Scroll last card into view (force layout recalc)
-        if (cards.length > 0) {
-            const lastCard = cards[cards.length - 1];
-            lastCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
             await sleep(1000);
-        }
 
-        // 4. Look for "Show more results" button
-        const showMoreBtn = document.querySelector('button.scaffold-finite-scroll__load-button');
-        if (showMoreBtn) {
-            log('Found "Show more results" button. Clicking...', 'INFO');
-            showMoreBtn.click();
-            await sleep(3000);
-        }
-
-        // 5. Stuck Detection
-        const currentY = window.scrollY;
-        // log(`Scroll Check: Old=${previousY}, New=${currentY}`, 'INFO');
-
-        await sleep(3000); // Wait for load
-
-        // Reset scroll attempts if we found something to act on
-        if (actionTakenOnPage) {
-            scrollAttempts = 0;
-        } else {
-            // Only increment attempt if we didn't do anything AND we didn't move much
-            if (Math.abs(currentY - previousY) < 50 && !showMoreBtn) {
-                log('⚠️ Scroll seems stuck.', 'WARNING');
+            // 3. Look for "Show more results" button
+            const showMoreBtn = document.querySelector('button.scaffold-finite-scroll__load-button');
+            if (showMoreBtn) {
+                log('Found "Show more results" button. Clicking...', 'INFO');
+                showMoreBtn.click();
+                await sleep(3000);
             }
+
+            // 5. Stuck Detection
+            const currentTop = workspace.scrollTop;
+
+            await sleep(3000);
+
+            if (actionTakenOnPage) {
+                scrollAttempts = 0;
+            } else {
+                if (Math.abs(currentTop - previousTop) < 10) {
+                    log('⚠️ Workspace scroll stuck. Forcing...', 'WARNING');
+                    workspace.scrollTop += 5000;
+                    await sleep(2000);
+                }
+                scrollAttempts++;
+            }
+        } else {
+            // Fallback to Window if workspace missing (unlikely now)
+            window.scrollTo({ top: document.body.scrollHeight + 1000, behavior: 'smooth' });
+            await sleep(3000);
             scrollAttempts++;
         }
     }
