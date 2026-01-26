@@ -311,6 +311,278 @@ async function startAutoConnect(settings = {}) {
     log('🎉 Auto-Connect operation complete.', 'INFO');
 }
 
+let isCatchingUp = false;
+let catchUpCount = 0;
+
+async function startAutoCatchUp(settings = {}) {
+    if (isCatchingUp) return;
+    isCatchingUp = true;
+    catchUpCount = 0;
+    const type = settings.type || 'all';
+
+    log(`🎂 Starting Catch-Up (${type})...`, 'INFO');
+
+    // Scroll Loop: Retry up to 10 times if no contacts found or exhausted
+    let scrollAttempts = 0;
+    const maxScrolls = 10;
+
+    while (isCatchingUp && scrollAttempts < maxScrolls) {
+
+        // 1. Find all visible Cards (more robust than just finding links)
+        const cards = Array.from(document.querySelectorAll('div[data-view-name="nurture-card"], li.artdeco-list__item'));
+
+        log(`Found ${cards.length} cards on this screen. (Scroll ${scrollAttempts}/${maxScrolls})`, 'INFO');
+
+        if (cards.length === 0) {
+            log('No cards found. Scrolling down...', 'INFO');
+            window.scrollBy(0, 800);
+            await sleep(3000);
+            scrollAttempts++;
+            continue;
+        }
+
+        let actionTakenOnPage = false;
+
+        for (const card of cards) {
+            if (!isCatchingUp) break;
+
+            const nameLines = card.innerText.split('\n');
+            const name = nameLines ? nameLines[0] : "Connection";
+            const cardText = card.innerText.toUpperCase();
+
+            // Filter by Type (Soft check based on text)
+            if (type === 'birthday' && !cardText.includes('BIRTHDAY')) continue;
+            if (type === 'career' && !(cardText.includes('ANNIVERSARY') || cardText.includes('JOB') || cardText.includes('POSITION'))) continue;
+
+            // 1. LIKE ACTION (Independent check)
+            // Strategy: Look for specific CTA first, then generic Like/React button
+            // "Open reactions menu" is the key selector found in inspection (lowercase)
+            let likeBtn = card.querySelector('button[aria-label="Open reactions menu"], button[aria-label*="reactions"], button[aria-label*="Say happy birthday"], button[aria-label*="Congratulate"], button[aria-label*="React"], button[aria-label^="Like"], .react-button__trigger');
+
+            // Fallback: Check for ANY button with text "Like" inside the card if we couldn't find one
+            if (!likeBtn) {
+                const allCardBtns = Array.from(card.querySelectorAll('button'));
+                likeBtn = allCardBtns.find(b => b.innerText.trim() === 'Like');
+            }
+
+            // Check if already liked (heuristic: sometimes button text changes or disappears, checking existence)
+            // Check if the button is NOT "Active" (already liked) - LinkedIn usually adds 'artdeco-button--primary' or similar, or aria-pressed
+            const isLiked = likeBtn && (likeBtn.getAttribute('aria-pressed') === 'true' || likeBtn.className.includes('active'));
+
+            if (likeBtn && !isLiked) {
+                log(`   👍 Clicking Like for ${name}...`, 'INFO');
+                likeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                await sleep(500);
+
+                // STEP 1: Click the trigger to open the menu
+                likeBtn.click();
+                await sleep(800);
+
+                // STEP 2: Find the specific "Like" reaction button in the document (it's often a portal outside the card)
+                // Look for the "Like" tooltip or aria-label in the active reaction menu
+                const reactionTray = document.querySelector('.artdeco-hoverable-content__content, .reactions-menu');
+                let reactionOption = null;
+
+                if (reactionTray) {
+                    // Try to find the "Like" button inside the tray
+                    reactionOption = reactionTray.querySelector('button[aria-label="Like"]');
+                }
+
+                // Fallback: If tray logic fails, sometimes the trigger click ITSELF is enough if it's not a hover menu?
+                // But the user says it "only hover activates".
+                // If we can't find the tray, maybe we need to double click or mouseover?
+                // Let's try clicking the "Like" option if found, otherwise assume standard click worked? 
+                // Actually, if the user sees the menu, we MUST click an option.
+
+                if (reactionOption) {
+                    log('      Found reaction tray option. Clicking...', 'DEBUG');
+                    reactionOption.click();
+                } else {
+                    // Try searching globally for the "Like" button that just appeared (high z-index?)
+                    const allLikeOptions = Array.from(document.querySelectorAll('button[aria-label="Like"]'));
+                    // The one that is visible?
+                    const visibleOption = allLikeOptions.find(b => b.offsetParent !== null && b !== likeBtn);
+                    if (visibleOption) {
+                        visibleOption.click();
+                        log('      Found global reaction option. Clicked.', 'DEBUG');
+                    } else {
+                        log('      Could not find specific reaction option. Hoping standard click worked.', 'WARNING');
+                    }
+                }
+
+                await sleep(1500);
+                actionTakenOnPage = true;
+            } else if (likeBtn && isLiked) {
+                // log(`   👍 Already liked update for ${name}.`, 'DEBUG');
+            } else {
+                // Handle "Missing" case
+                if (cardText.includes('MESSAGE SENT')) {
+                    log(`   ℹ️ Like button unavailable for ${name} (Normal for sent Birthdays).`, 'DEBUG');
+                } else {
+                    log(`   ⚠️ Could not find Like button for ${name}.`, 'WARNING');
+                }
+            }
+
+            // 2. MESSAGE ACTION
+            if (cardText.includes('MESSAGE SENT')) {
+                // log(`   Skipping Message for ${name} (Already Sent).`, 'DEBUG');
+                continue;
+            }
+
+            const messageLink = card.querySelector('a[href*="/messaging/compose/"]');
+            if (messageLink && messageLink.href.toUpperCase().includes('PROPURN')) {
+
+                log(`🎂 Sending request to: ${name}...`, 'INFO');
+                messageLink.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                await sleep(1000);
+                messageLink.click();
+                await sleep(3500);
+                actionTakenOnPage = true;
+
+                // ... (Send Button Logic - EXACT SAME AS BEFORE) ...
+                // Helper to find the button
+                const findSendButton = () => {
+                    // Strategy 1: SHADOW DOM (Confirmed location)
+                    const shadowHost = document.querySelector('#interop-outlet');
+                    if (shadowHost && shadowHost.shadowRoot) {
+                        const shadowBtns = Array.from(shadowHost.shadowRoot.querySelectorAll('button.msg-form__send-button, button[type="submit"]'));
+                        // Prefer the LAST one that is ENABLED
+                        const enabledBtn = shadowBtns.reverse().find(b => !b.disabled);
+                        if (enabledBtn) return enabledBtn;
+                        if (shadowBtns.length > 0) return shadowBtns[shadowBtns.length - 1];
+                    }
+                    // Strategy 2: Global Search (Fallback for standard DOM)
+                    const allBtns = Array.from(document.querySelectorAll('button'));
+                    const candidates = allBtns.filter(b => {
+                        const text = b.innerText.trim().toUpperCase();
+                        return (text === 'SEND' || text === 'SUBMIT' || b.classList.contains('msg-form__send-button')) && b.offsetParent !== null;
+                    });
+
+                    // Prefer ENABLED one
+                    const enabledGlobal = candidates.reverse().find(b => !b.disabled);
+                    if (enabledGlobal) return enabledGlobal;
+
+                    if (candidates.length > 0) return candidates[candidates.length - 1];
+                    return null;
+                };
+
+                let sendBtn = null;
+                for (let k = 0; k < 10; k++) { sendBtn = findSendButton(); if (sendBtn) break; await sleep(500); }
+
+                if (sendBtn) {
+                    // Wait for it to be enabled (Poll for 3s)
+                    for (let k = 0; k < 6; k++) {
+                        if (!sendBtn.disabled) break;
+                        await sleep(500);
+                    }
+
+                    // Wake up logic...
+                    if (sendBtn.disabled) {
+                        log('   ⚠️ Send button is DISABLED. Form wake-up...', 'WARNING');
+                        let textarea = null;
+                        const shadowHost = document.querySelector('#interop-outlet');
+                        if (shadowHost && shadowHost.shadowRoot) {
+                            const textareas = shadowHost.shadowRoot.querySelectorAll('textarea, div[role="textbox"]');
+                            if (textareas.length > 0) textarea = textareas[textareas.length - 1];
+                        }
+                        if (!textarea) textarea = document.querySelector('textarea, div[role="textbox"]');
+
+                        if (textarea) {
+                            textarea.focus();
+                            // Dispatch multiple event types to force validation update
+                            ['input', 'change', 'keydown', 'keyup'].forEach(eventType => {
+                                textarea.dispatchEvent(new Event(eventType, { bubbles: true }));
+                            });
+                            await sleep(500);
+                        }
+                    }
+
+                    // FINAL ATTEMPT: Click it anyway even if it says disabled (UI might be ahead of DOM)
+                    log(`   ✉️ Clicking Send (Text: "${sendBtn.innerText.trim()}", Disabled: ${sendBtn.disabled})...`, 'DEBUG');
+
+                    try {
+                        sendBtn.disabled = false; // Force enable in DOM just in case
+                        sendBtn.click();
+                        sendBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+                    } catch (e) { log('   ❌ Click error: ' + e.message, 'ERROR'); }
+
+                    catchUpCount++;
+                    chrome.runtime.sendMessage({ action: 'updateCatchUpCount', count: catchUpCount });
+
+                    log('   👀 Verifying message sent...', 'INFO');
+                    let verified = false;
+                    for (let v = 0; v < 10; v++) {
+                        const c = messageLink.closest('.artdeco-card, li');
+                        if (c && c.innerText.includes('Message sent')) { verified = true; log('   ✅ Verified.', 'SUCCESS'); break; }
+                        await sleep(500);
+                    }
+                } else {
+                    log('   ❌ Send button disabled.', 'ERROR');
+                }
+                await sleep(1500);
+                const closeBtn = document.querySelector('button[aria-label*="Dismiss"], .msg-overlay-bubble-header__control--close-btn');
+                if (closeBtn) closeBtn.click();
+            } else {
+                const closeBtn = document.querySelector('button[aria-label*="Dismiss"], .msg-overlay-bubble-header__control--close-btn');
+                if (closeBtn) closeBtn.click();
+            }
+
+            await sleep(1000);
+        }
+
+        // --- SCROLL STRATEGY ---
+        log(`FINISHED VIEW. Attempting to scroll...`, 'INFO');
+
+        const previousY = window.scrollY;
+
+        // 1. Scroll Window
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+        // 2. Scroll specific container (if exists)
+        const mainContainer = document.querySelector('.scaffold-layout__main');
+        if (mainContainer) {
+            mainContainer.scrollTop = mainContainer.scrollHeight;
+        }
+
+        await sleep(2000);
+
+        // 3. Scroll last card into view (force layout recalc)
+        if (cards.length > 0) {
+            const lastCard = cards[cards.length - 1];
+            lastCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            await sleep(1000);
+        }
+
+        // 4. Look for "Show more results" button
+        const showMoreBtn = document.querySelector('button.scaffold-finite-scroll__load-button');
+        if (showMoreBtn) {
+            log('Found "Show more results" button. Clicking...', 'INFO');
+            showMoreBtn.click();
+            await sleep(3000);
+        }
+
+        // 5. Stuck Detection
+        const currentY = window.scrollY;
+        // log(`Scroll Check: Old=${previousY}, New=${currentY}`, 'INFO');
+
+        await sleep(3000); // Wait for load
+
+        // Reset scroll attempts if we found something to act on
+        if (actionTakenOnPage) {
+            scrollAttempts = 0;
+        } else {
+            // Only increment attempt if we didn't do anything AND we didn't move much
+            if (Math.abs(currentY - previousY) < 50 && !showMoreBtn) {
+                log('⚠️ Scroll seems stuck.', 'WARNING');
+            }
+            scrollAttempts++;
+        }
+    }
+
+    isCatchingUp = false;
+    log('🎉 Catch-Up operation complete.', 'INFO');
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'start') {
         startAutomation(request.settings);
@@ -324,7 +596,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.action === 'stopConnect') {
         isConnecting = false;
         sendResponse({ status: 'stopped' });
+    } else if (request.action === 'startCatchUp') {
+        log('📩 Received startCatchUp command!', 'INFO');
+        startAutoCatchUp(request.settings);
+        sendResponse({ status: 'catchingUp' });
+    } else if (request.action === 'stopCatchUp') {
+        isCatchingUp = false;
+        sendResponse({ status: 'stopped' });
     } else if (request.action === 'getStatus') {
-        sendResponse({ isRunning, applicationCount, isConnecting, connectCount });
+        sendResponse({ isRunning, applicationCount, isConnecting, connectCount, isCatchingUp, catchUpCount });
     }
 });

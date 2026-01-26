@@ -130,8 +130,18 @@ function updateUI(status) {
     startConnectBtn.disabled = status.isConnecting;
     stopConnectBtn.disabled = !status.isConnecting;
 
+    const startCatchUpBtn = document.getElementById('startCatchUpBtn');
+    const stopCatchUpBtn = document.getElementById('stopCatchUpBtn');
+    const catchUpCountDisplay = document.getElementById('catchUpCount');
+
+    if (startCatchUpBtn) {
+        startCatchUpBtn.disabled = status.isCatchingUp;
+        stopCatchUpBtn.disabled = !status.isCatchingUp;
+    }
+
     countDisplay.innerText = status.applicationCount || 0;
     if (connectCountDisplay) connectCountDisplay.innerText = status.connectCount || 0;
+    if (catchUpCountDisplay) catchUpCountDisplay.innerText = status.catchUpCount || 0;
 }
 
 startBtn.addEventListener('click', () => {
@@ -222,17 +232,108 @@ stopConnectBtn.addEventListener('click', () => {
     });
 });
 
-// Tab Switching Logic
-const tabBtns = document.querySelectorAll('.tab-btn');
-const tabContents = document.querySelectorAll('.tab-content');
+// Catch Up Logic
+const startCatchUpBtn = document.getElementById('startCatchUpBtn');
+const stopCatchUpBtn = document.getElementById('stopCatchUpBtn');
+const catchUpType = document.getElementById('catchUpType');
+const catchUpCountDisplay = document.getElementById('catchUpCount');
 
-tabBtns.forEach(btn => {
+startCatchUpBtn.addEventListener('click', () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+            // 1. Check URL and Redirect if needed
+            if (!tabs[0].url.includes('mynetwork/catch-up')) {
+                const targetUrl = 'https://www.linkedin.com/mynetwork/catch-up/all/';
+                chrome.tabs.update(tabs[0].id, { url: targetUrl });
+
+                const logItem = document.createElement('div');
+                logItem.style.color = '#e6b800'; // Orange/Yellow
+                logItem.innerText = "Redirecting to Catch Up page... Please wait and click Start again.";
+                logDisplay.appendChild(logItem);
+                logDisplay.scrollTop = logDisplay.scrollHeight;
+                return;
+            }
+
+            const type = catchUpType.value;
+            // DEBUG LOG
+            console.log('Sending startCatchUp message to tab:', tabs[0].id);
+
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'startCatchUp', settings: { type } }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error('Runtime error:', chrome.runtime.lastError);
+
+                    // Auto-Refresh Logic
+                    const logItem = document.createElement('div');
+                    logItem.style.color = '#ff0000';
+                    logItem.innerText = "Connection Failed. Reloading page... Please click Start again.";
+                    logDisplay.appendChild(logItem);
+                    logDisplay.scrollTop = logDisplay.scrollHeight;
+
+                    chrome.tabs.reload(tabs[0].id);
+                    return;
+                }
+
+                if (response) {
+                    startCatchUpBtn.disabled = true;
+                    stopCatchUpBtn.disabled = false;
+                }
+            });
+        }
+    });
+});
+
+stopCatchUpBtn.addEventListener('click', () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'stopCatchUp' }, (response) => {
+                if (response) {
+                    startCatchUpBtn.disabled = false;
+                    stopCatchUpBtn.disabled = true;
+                }
+            });
+        }
+    });
+});
+
+// Tab Switching Logic
+// Tab Switching Logic
+// 1. Main Tabs
+const mainTabBtns = document.querySelectorAll('.tab-btn:not(.sub-tab-btn)');
+const mainTabContents = document.querySelectorAll('.tab-content');
+
+mainTabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         const target = btn.dataset.tab;
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
+        if (!target) return; // ignore if no data-tab (safety)
+
+        mainTabBtns.forEach(b => b.classList.remove('active'));
+        mainTabContents.forEach(c => c.classList.remove('active'));
+
         btn.classList.add('active');
-        document.getElementById(target).classList.add('active');
+        const targetEl = document.getElementById(target);
+        if (targetEl) targetEl.classList.add('active');
+    });
+});
+
+// 2. Sub Tabs (Settings)
+const subTabBtns = document.querySelectorAll('.sub-tab-btn');
+const subTabContents = document.querySelectorAll('.sub-tab-content');
+
+subTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = btn.dataset.subtab;
+        if (!target) return;
+
+        subTabBtns.forEach(b => b.classList.remove('active'));
+        subTabContents.forEach(c => c.style.display = 'none');
+        subTabContents.forEach(c => c.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetEl = document.getElementById(target);
+        if (targetEl) {
+            targetEl.style.display = 'block';
+            targetEl.classList.add('active');
+        }
     });
 });
 
@@ -246,5 +347,8 @@ chrome.runtime.onMessage.addListener((request) => {
         countDisplay.innerText = request.count;
     } else if (request.action === 'updateConnectCount') {
         if (connectCountDisplay) connectCountDisplay.innerText = request.count;
+    } else if (request.action === 'updateCatchUpCount') {
+        const catchUpCountDisplay = document.getElementById('catchUpCount');
+        if (catchUpCountDisplay) catchUpCountDisplay.innerText = request.count;
     }
 });

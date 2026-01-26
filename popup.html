@@ -4,7 +4,7 @@
 <head>
   <style>
     body {
-      width: 350px;
+      width: 400px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       padding: 0;
       margin: 0;
@@ -161,15 +161,14 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="dashboard">Launch</button>
-    <button class="tab-btn" data-tab="filters">Filters</button>
+    <button class="tab-btn active" data-tab="apply">Apply</button>
     <button class="tab-btn" data-tab="connect">Connect</button>
-    <button class="tab-btn" data-tab="profile">Profile</button>
-    <button class="tab-btn" data-tab="library">Library</button>
+    <button class="tab-btn" data-tab="catchup">Catch Up</button>
+    <button class="tab-btn" data-tab="settings">Settings</button>
   </div>
 
-  <!-- Dashboard Tab -->
-  <div id="dashboard" class="tab-content active">
+  <!-- Apply (Dashboard) Tab -->
+  <div id="apply" class="tab-content active">
     <div class="section">
       <div class="count-row">
         <span>Applied: <span id="count" class="count">0</span></span>
@@ -177,56 +176,6 @@
       </div>
       <button id="startBtn" class="btn">Start Auto-Apply</button>
       <button id="stopBtn" class="btn btn-stop" disabled>Stop</button>
-    </div>
-  </div>
-
-  <!-- Filters Tab -->
-  <div id="filters" class="tab-content">
-    <div class="section">
-      <div class="section-title">Search Criteria</div>
-      <div class="input-group">
-        <label>Keywords</label>
-        <input type="text" id="keywords" placeholder="software developer">
-      </div>
-      <div class="input-group">
-        <label>Location</label>
-        <input type="text" id="location" placeholder="Bengaluru">
-      </div>
-      <div class="input-group">
-        <label>Date Posted</label>
-        <select id="datePosted">
-          <option value="">Anytime</option>
-          <option value="r86400">Past 24 hours</option>
-          <option value="r604800">Past Week</option>
-          <option value="r2592000">Past Month</option>
-        </select>
-      </div>
-      <div class="input-group">
-        <label>Experience Level</label>
-        <select id="experienceLevel">
-          <option value="">Any</option>
-          <option value="1">Internship</option>
-          <option value="2">Entry Level</option>
-          <option value="3">Associate</option>
-          <option value="4">Mid-Senior Level</option>
-          <option value="5">Director</option>
-          <option value="6">Executive</option>
-        </select>
-      </div>
-      <div class="input-group">
-        <label>Remote / Workplace</label>
-        <select id="workplaceType">
-          <option value="">Any</option>
-          <option value="2">Remote</option>
-          <option value="1">On-site</option>
-          <option value="3">Hybrid</option>
-        </select>
-      </div>
-      <div class="input-group" style="display: flex; align-items: center; gap: 8px;">
-        <input type="checkbox" id="under10Apps" style="width: auto;">
-        <label style="margin-bottom: 0;">Under 10 applicants</label>
-      </div>
-      <button id="saveBtnFilters" class="btn btn-save">Save Filters</button>
     </div>
   </div>
 
@@ -247,40 +196,125 @@
     </div>
   </div>
 
-  <!-- Profile Tab -->
-  <div id="profile" class="tab-content">
+  <!-- Catch Up Tab -->
+  <div id="catchup" class="tab-content">
     <div class="section">
-      <div class="section-title">User Information</div>
+      <div class="section-title">Auto-Catch Up</div>
       <div class="input-group">
-        <label>Full Name</label>
-        <input type="text" id="fullName" placeholder="Aman Kumar">
+        <label>Message Type</label>
+        <select id="catchUpType">
+          <option value="all">All (Birthday + Anniversary)</option>
+          <option value="birthday">Birthdays Only</option>
+          <option value="career">Work Anniversaries Only</option>
+        </select>
       </div>
-      <div class="input-group">
-        <label>Email</label>
-        <input type="email" id="email" placeholder="amankarguwal1@gmail.com">
+      <div class="count-row">
+        <span>Messages Sent: <span id="catchUpCount" class="count">0</span></span>
       </div>
-      <div class="input-group">
-        <label>Phone</label>
-        <input type="text" id="phone" placeholder="+916284736836">
-      </div>
-      <div class="input-group">
-        <label>Salary Expectation (LPA/Monthly)</label>
-        <input type="text" id="salary" placeholder="8 LPA">
-      </div>
-      <div class="input-group">
-        <label>Notice Period</label>
-        <input type="text" id="notice" placeholder="1 month">
-      </div>
-      <button id="saveBtnProfile" class="btn btn-save">Save Profile</button>
+      <button id="startCatchUpBtn" class="btn">Start Catch Up</button>
+      <button id="stopCatchUpBtn" class="btn btn-stop" disabled>Stop</button>
+      <div class="hint">Open "mynetwork/catch-up/all/" first.</div>
     </div>
   </div>
 
-  <!-- Library Tab -->
-  <div id="library" class="tab-content">
-    <div class="section">
-      <div class="section-title">Question Library (Learning)</div>
-      <div id="questionLibrary" style="font-size: 11px; color: #666;">
-        No new questions detected yet.
+  <!-- Settings Tab -->
+  <div id="settings" class="tab-content">
+
+    <!-- Sub-Tabs for Settings -->
+    <div class="tabs" style="background: #f3f2ef; border: none; margin-bottom: 10px;">
+      <button class="tab-btn sub-tab-btn active" data-subtab="filters"
+        style="background: #e0e0e0; border-radius: 4px 0 0 4px;">Filters</button>
+      <button class="tab-btn sub-tab-btn" data-subtab="profile"
+        style="background: #e0e0e0; border-left: 1px solid #fff;">Profile</button>
+      <button class="tab-btn sub-tab-btn" data-subtab="library"
+        style="background: #e0e0e0; border-radius: 0 4px 4px 0; border-left: 1px solid #fff;">Library</button>
+    </div>
+
+    <!-- Filters Sub-Section -->
+    <div id="filters" class="sub-tab-content active">
+      <div class="section">
+        <div class="section-title">Search Criteria</div>
+        <div class="input-group">
+          <label>Keywords</label>
+          <input type="text" id="keywords" placeholder="software developer">
+        </div>
+        <div class="input-group">
+          <label>Location</label>
+          <input type="text" id="location" placeholder="Bengaluru">
+        </div>
+        <div class="input-group">
+          <label>Date Posted</label>
+          <select id="datePosted">
+            <option value="">Anytime</option>
+            <option value="r86400">Past 24 hours</option>
+            <option value="r604800">Past Week</option>
+            <option value="r2592000">Past Month</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Experience Level</label>
+          <select id="experienceLevel">
+            <option value="">Any</option>
+            <option value="1">Internship</option>
+            <option value="2">Entry Level</option>
+            <option value="3">Associate</option>
+            <option value="4">Mid-Senior Level</option>
+            <option value="5">Director</option>
+            <option value="6">Executive</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Remote / Workplace</label>
+          <select id="workplaceType">
+            <option value="">Any</option>
+            <option value="2">Remote</option>
+            <option value="1">On-site</option>
+            <option value="3">Hybrid</option>
+          </select>
+        </div>
+        <div class="input-group" style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="under10Apps" style="width: auto;">
+          <label style="margin-bottom: 0;">Under 10 applicants</label>
+        </div>
+        <button id="saveBtnFilters" class="btn btn-save">Save Filters</button>
+      </div>
+    </div>
+
+    <!-- Profile Sub-Section -->
+    <div id="profile" class="sub-tab-content" style="display:none;">
+      <div class="section">
+        <div class="section-title">User Information</div>
+        <div class="input-group">
+          <label>Full Name</label>
+          <input type="text" id="fullName" placeholder="Aman Kumar">
+        </div>
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="amankarguwal1@gmail.com">
+        </div>
+        <div class="input-group">
+          <label>Phone</label>
+          <input type="text" id="phone" placeholder="+916284736836">
+        </div>
+        <div class="input-group">
+          <label>Salary Expectation (LPA/Monthly)</label>
+          <input type="text" id="salary" placeholder="8 LPA">
+        </div>
+        <div class="input-group">
+          <label>Notice Period</label>
+          <input type="text" id="notice" placeholder="1 month">
+        </div>
+        <button id="saveBtnProfile" class="btn btn-save">Save Profile</button>
+      </div>
+    </div>
+
+    <!-- Library Sub-Section -->
+    <div id="library" class="sub-tab-content" style="display:none;">
+      <div class="section">
+        <div class="section-title">Question Library (Learning)</div>
+        <div id="questionLibrary" style="font-size: 11px; color: #666;">
+          No new questions detected yet.
+        </div>
       </div>
     </div>
   </div>
