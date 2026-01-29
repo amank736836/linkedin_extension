@@ -177,8 +177,30 @@ async function startAutomation(settings) {
     log('🎉 Automation finished or stopped.', 'INFO');
 }
 
+// --- SAFETY: Check for Captcha/checkpoint ---
+function checkForSecurityCheckpoint() {
+    const bodyText = document.body.innerText.toLowerCase();
+    const suspiciousPhrases = ['security check', 'verify you are human', 'suspicious activity', 'restricted account', 'captcha', 'verification required', 'please verify', 'identity verification'];
+    const captchaFrame = document.querySelector('iframe[src*="captcha"], iframe[src*="recaptcha"]');
+    const checkpointHeader = document.querySelector('.checkpoint-header, #captcha-challenge');
+
+    if (captchaFrame || checkpointHeader || suspiciousPhrases.some(p => bodyText.includes(p) && bodyText.length < 5000)) {
+        log('🚨 CRITICAL: Security Checkpoint Detected! Stopping all automation.', 'ERROR');
+        isConnecting = false;
+        isCatchingUp = false;
+        isRunning = false;
+        alert('⚠️ Automation STOPPED due to LinkedIn Security Check. Please verify manually.');
+        return true;
+    }
+    return false;
+}
+
 async function startAutoConnect(settings = {}) {
     if (isConnecting) return;
+
+    // SAFETY CHECK INIT
+    if (checkForSecurityCheckpoint()) return;
+
     isConnecting = true;
     const delay = parseInt(settings.connectDelay) || 10;
     log(`🤝 Starting Refined Auto-Connect (Delay: ${delay}s)...`, 'INFO');
@@ -205,6 +227,9 @@ async function startAutoConnect(settings = {}) {
     }
 
     while (isConnecting) {
+        // Continuous Safety Check
+        if (checkForSecurityCheckpoint()) break;
+
         // Find and expand "Show all" buttons in target sections
         const sections = Array.from(document.querySelectorAll('section, .artdeco-card'));
         for (const section of sections) {
@@ -337,6 +362,8 @@ async function startAutoCatchUp(settings = {}) {
     } catch (e) { console.error(e); }
 
     while (isCatchingUp && scrollAttempts < maxScrolls) {
+
+        if (checkForSecurityCheckpoint()) break; // SAFETY STOP
 
         // 1. Find all visible Cards (more robust than just finding links)
         const cards = Array.from(document.querySelectorAll('div[data-view-name="nurture-card"], li.artdeco-list__item'));

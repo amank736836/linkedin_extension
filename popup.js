@@ -200,18 +200,42 @@ stopBtn.addEventListener('click', () => {
 startConnectBtn.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]) {
+            // 1. Check URL & Auto-Redirect
             if (!tabs[0].url.includes('mynetwork/grow/')) {
-                alert('Please navigate to the "Grow your network" page first!');
+                const targetUrl = 'https://www.linkedin.com/mynetwork/grow/';
+                chrome.tabs.update(tabs[0].id, { url: targetUrl });
+
+                const logItem = document.createElement('div');
+                logItem.style.color = '#e6b800';
+                logItem.innerText = "Redirecting... Auto-starting in 10s... ⏳";
+                logDisplay.appendChild(logItem);
+
+                setTimeout(() => {
+                    logItem.innerText = "Auto-starting now... 🚀";
+                    startConnectBtn.click();
+                }, 10000);
                 return;
             }
+
             chrome.tabs.sendMessage(tabs[0].id, { action: 'startConnect' }, (response) => {
+                // Auto-Restart on Connection Error
+                if (chrome.runtime.lastError) {
+                    console.error('Runtime error:', chrome.runtime.lastError);
+                    const logItem = document.createElement('div');
+                    logItem.style.color = '#ff0000';
+                    logItem.innerText = "Connection Failed. Reloading... Click Start again.";
+                    logDisplay.appendChild(logItem);
+                    chrome.tabs.reload(tabs[0].id);
+                    return;
+                }
+
                 if (response) {
                     startConnectBtn.disabled = true;
                     stopConnectBtn.disabled = false;
                 } else {
                     const logItem = document.createElement('div');
                     logItem.style.color = '#ff0000';
-                    logItem.innerText = "Error: Could not start. Please reload LinkedIn page.";
+                    logItem.innerText = "Error: Unknown response. Reload page.";
                     logDisplay.appendChild(logItem);
                 }
             });
