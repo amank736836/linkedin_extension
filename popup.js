@@ -168,9 +168,15 @@ startBtn.addEventListener('click', () => {
 
             if (!isTargetPage) {
                 const logItem = document.createElement('div');
-                logItem.innerText = "Redirecting to filtered results...";
+                logItem.style.color = '#e6b800';
+                logItem.innerText = "Redirecting... Auto-starting in 10s... ⏳";
                 logDisplay.appendChild(logItem);
                 chrome.tabs.update(tabs[0].id, { url: targetUrl.toString() });
+
+                setTimeout(() => {
+                    logItem.innerText = "Auto-starting now... 🚀";
+                    startBtn.click();
+                }, 10000);
                 return;
             }
 
@@ -272,9 +278,14 @@ startCatchUpBtn.addEventListener('click', () => {
 
                 const logItem = document.createElement('div');
                 logItem.style.color = '#e6b800'; // Orange/Yellow
-                logItem.innerText = "Redirecting to Catch Up page... Please wait and click Start again.";
+                logItem.innerText = "Redirecting... Auto-starting in 10s... ⏳";
                 logDisplay.appendChild(logItem);
                 logDisplay.scrollTop = logDisplay.scrollHeight;
+
+                setTimeout(() => {
+                    logItem.innerText = "Auto-starting now... 🚀";
+                    startCatchUpBtn.click();
+                }, 10000);
                 return;
             }
 

@@ -347,9 +347,9 @@ async function startAutoCatchUp(settings = {}) {
 
     log(`🎂 Starting Catch-Up (${type})...`, 'INFO');
 
-    // Scroll Loop: Retry up to 10 times if no contacts found or exhausted
+    // Scroll Loop: Retry up to 5 times if no contacts found or exhausted
     let scrollAttempts = 0;
-    const maxScrolls = 10;
+    const maxScrolls = 5;
 
     // Load processed names from Storage (Persistent Memory)
     let processedNames = new Set();
