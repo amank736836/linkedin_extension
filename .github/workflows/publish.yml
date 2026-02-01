@@ -21,7 +21,7 @@ jobs:
       - name: Upload to Edge Add-ons
         uses: wdzeng/edge-addon@v1
         with:
-          product-id: ${{ secrets.EDGE_PRODUCT_ID }}
-          client-id: ${{ secrets.EDGE_CLIENT_ID }}
-          client-secret: ${{ secrets.EDGE_API_KEY }}
+          product-id: ${{ secrets.PRODUCTID }}
+          client-id: ${{ secrets.CLIENTID }}
+          client-secret: ${{ secrets.APIKEY }}
           file: linkedin_extension.zip
