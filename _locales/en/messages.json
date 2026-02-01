@@ -1,0 +1,10 @@
+{
+    "extensionName": {
+        "message": "LinkedIn Automator",
+        "description": "Name of the extension"
+    },
+    "extensionDescription": {
+        "message": "Automate LinkedIn Easy Apply applications with human-like behavior.",
+        "description": "Description of the extension"
+    }
+}
