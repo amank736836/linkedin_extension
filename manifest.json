@@ -8,6 +8,7 @@
         "storage",
         "management"
     ],
+    "default_locale": "en",
     "action": {
         "default_popup": "popup.html",
         "default_icon": {
