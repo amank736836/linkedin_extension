@@ -5,7 +5,8 @@
     "description": "Automate LinkedIn Easy Apply applications with human-like behavior.",
     "permissions": [
         "activeTab",
-        "storage"
+        "storage",
+        "management"
     ],
     "action": {
         "default_popup": "popup.html"

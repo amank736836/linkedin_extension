@@ -345,6 +345,38 @@ stopCatchUpBtn.addEventListener('click', () => {
 const mainTabBtns = document.querySelectorAll('.tab-btn:not(.sub-tab-btn)');
 const mainTabContents = document.querySelectorAll('.tab-content');
 
+// Log Visibility Management
+let isDeveloperMode = false;
+
+function updateLogVisibility() {
+    const logContainer = document.getElementById('log').parentElement;
+    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+
+    if (isDeveloperMode && activeTab !== 'settings') {
+        logContainer.style.display = 'block';
+    } else {
+        logContainer.style.display = 'none';
+        // Note: We don't want logs in Settings even if Dev Mode is on, 
+        // to keep the UI clean as requested.
+    }
+}
+
+// Developer Mode Check
+function checkDeveloperMode() {
+    if (chrome.management && chrome.management.getSelf) {
+        chrome.management.getSelf((info) => {
+            if (info.installType === 'development') {
+                isDeveloperMode = true;
+                console.log('Developer Mode detected: Logs enabled.');
+                updateLogVisibility();
+            }
+        });
+    }
+}
+
+// Run check on load
+document.addEventListener('DOMContentLoaded', checkDeveloperMode);
+
 mainTabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         const target = btn.dataset.tab;
@@ -357,13 +389,7 @@ mainTabBtns.forEach(btn => {
         const targetEl = document.getElementById(target);
         if (targetEl) targetEl.classList.add('active');
 
-        // Toggle Logs visibility: Hide on Settings tab, show on others
-        const logContainer = document.getElementById('log').parentElement;
-        if (target === 'settings') {
-            logContainer.style.display = 'none';
-        } else {
-            logContainer.style.display = 'block';
-        }
+        updateLogVisibility();
     });
 });
 
