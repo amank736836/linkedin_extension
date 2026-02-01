@@ -14,14 +14,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Zip Extension
-        run: |
-          zip -r linkedin_extension.zip . -x "*.git*"
-
-      - name: Upload to Edge Add-ons
-        uses: wdzeng/edge-addon@v1
-        with:
-          product-id: ${{ secrets.PRODUCTID }}
-          client-id: ${{ secrets.CLIENTID }}
-          client-secret: ${{ secrets.APIKEY }}
-          file: linkedin_extension.zip
+      - name: Run Publisher Script
+        shell: pwsh
+        env:
+          CLIENTID: ${{ secrets.CLIENTID }}
+          APIKEY: ${{ secrets.APIKEY }}
+          PRODUCTID: ${{ secrets.PRODUCTID }}
+        run: ./publish_to_edge.ps1
