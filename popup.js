@@ -229,9 +229,14 @@ startConnectBtn.addEventListener('click', () => {
                     console.error('Runtime error:', chrome.runtime.lastError);
                     const logItem = document.createElement('div');
                     logItem.style.color = '#ff0000';
-                    logItem.innerText = "Connection Failed. Reloading... Click Start again.";
+                    logItem.innerText = "Connection Failed. Reloading... Auto-start in 10s... ⏳";
                     logDisplay.appendChild(logItem);
                     chrome.tabs.reload(tabs[0].id);
+
+                    setTimeout(() => {
+                        logItem.innerText = "Auto-starting now... 🚀";
+                        startConnectBtn.click();
+                    }, 10000);
                     return;
                 }
 
@@ -297,14 +302,18 @@ startCatchUpBtn.addEventListener('click', () => {
                 if (chrome.runtime.lastError) {
                     console.error('Runtime error:', chrome.runtime.lastError);
 
-                    // Auto-Refresh Logic
                     const logItem = document.createElement('div');
                     logItem.style.color = '#ff0000';
-                    logItem.innerText = "Connection Failed. Reloading page... Please click Start again.";
+                    logItem.innerText = "Connection Failed. Reloading... Auto-start in 10s... ⏳";
                     logDisplay.appendChild(logItem);
                     logDisplay.scrollTop = logDisplay.scrollHeight;
 
                     chrome.tabs.reload(tabs[0].id);
+
+                    setTimeout(() => {
+                        logItem.innerText = "Auto-starting now... 🚀";
+                        startCatchUpBtn.click();
+                    }, 10000);
                     return;
                 }
 
@@ -347,6 +356,14 @@ mainTabBtns.forEach(btn => {
         btn.classList.add('active');
         const targetEl = document.getElementById(target);
         if (targetEl) targetEl.classList.add('active');
+
+        // Toggle Logs visibility: Hide on Settings tab, show on others
+        const logContainer = document.getElementById('log').parentElement;
+        if (target === 'settings') {
+            logContainer.style.display = 'none';
+        } else {
+            logContainer.style.display = 'block';
+        }
     });
 });
 

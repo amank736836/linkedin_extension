@@ -73,6 +73,32 @@ async function fillForm() {
     });
 }
 
+const dismissAndSave = async () => {
+    log('   ❎ Dismissing form...', 'INFO');
+    const dismissBtn = document.querySelector('button[aria-label*="Dismiss"]');
+    if (dismissBtn) {
+        dismissBtn.click();
+        await sleep(1000);
+    }
+
+    // Check for "Save" modal (Retry a few times)
+    for (let k = 0; k < 3; k++) {
+        const modal = document.querySelector('.artdeco-modal');
+        if (modal && (modal.innerText.includes('Save') || modal.innerText.includes('discard'))) {
+            const saveBtn = Array.from(modal.querySelectorAll('button')).find(b =>
+                b.innerText.trim() === 'Save' || b.classList.contains('artdeco-button--primary')
+            );
+            if (saveBtn) {
+                log('   💾 "Save" modal found. Clicking Save...', 'SUCCESS');
+                saveBtn.click();
+                await sleep(1000);
+                return;
+            }
+        }
+        await sleep(500);
+    }
+};
+
 async function startAutomation(settings) {
     if (isRunning) return;
     isRunning = true;
@@ -82,6 +108,12 @@ async function startAutomation(settings) {
     log('🚀 Starting Automation Run...', 'INFO');
 
     while (applicationCount < targetCount && isRunning) {
+        // Safety Clean-up at start of loop
+        const strayModal = document.querySelector('.artdeco-modal');
+        if (strayModal && strayModal.innerText.includes('Save')) {
+            await dismissAndSave();
+        }
+
         const cards = document.querySelectorAll('li[data-occludable-job-id]');
         log(`Found ${cards.length} jobs on this page.`, 'INFO');
 
@@ -115,7 +147,8 @@ async function startAutomation(settings) {
                             log(`✓ Applied! Waiting 45s...`, 'SUCCESS');
                             chrome.runtime.sendMessage({ action: 'updateCount', count: applicationCount });
                             await sleep(45000);
-                            document.querySelector('button[aria-label*="Dismiss"]')?.click();
+                            // Dismiss and Handle "Save" Modal
+                            await dismissAndSave();
                             success = true;
                             break;
                         } else {
@@ -148,7 +181,8 @@ async function startAutomation(settings) {
                             });
                         }
 
-                        document.querySelector('button[aria-label*="Dismiss"]')?.click();
+                        // Dismiss and Handle "Save" Modal
+                        await dismissAndSave();
                     }
                 } else {
                     log('Skipping job (already applied or no Easy Apply button)', 'DEBUG');
@@ -386,14 +420,15 @@ async function startAutoCatchUp(settings = {}) {
             const nameLines = card.innerText.split('\n');
             const name = nameLines ? nameLines[0].trim() : "Connection";
 
-            if (processedNames.has(name)) {
-                // log(`   ⏭️ Already processed ${name} (History). Skipping.`, 'DEBUG');
-                continue;
-            }
+            // HISTORY CHECK: Don't skip yet! Just mark as history.
+            // We want to check Likes even if we processed them before (e.g. if Like failed last time).
+            const alreadyInHistory = processedNames.has(name);
 
-            // Mark as seen & SAVE to storage
-            processedNames.add(name);
-            chrome.storage.local.set({ 'catchUpProcessed': Array.from(processedNames) });
+            // Add to processed list for NEXT time (if not there)
+            if (!alreadyInHistory) {
+                processedNames.add(name);
+                chrome.storage.local.set({ 'catchUpProcessed': Array.from(processedNames) });
+            }
 
             const cardText = card.innerText.toUpperCase();
 
@@ -412,25 +447,29 @@ async function startAutoCatchUp(settings = {}) {
                 likeBtn = allCardBtns.find(b => b.innerText.trim() === 'Like');
             }
 
-            // RELIABLE CHECK: Check text color or SVG fill of the trigger button
-            // If it is "Blue" (LinkedIn Blue is usually #0a66c2), it is Liked.
-            // If it is "Grey" (rgba(0,0,0,0.6) or similar), it is Unliked.
+            // RELIABLE CHECK using User's snippets
+            // User provided specific HTML for Liked vs Unliked states.
+            const cardHtml = card.innerHTML;
+
+            // Explicit "Liked" signal (Blue Fill) from user's snippet
+            const hasBlueFill = cardHtml.includes('fill="#378fe9"');
+
+            // Explicit "Not Liked" signal from user's snippet
+            const hasNoReactionLabel = cardHtml.includes('Reaction button state: no reaction');
+
             let isLiked = false;
 
-            if (likeBtn) {
-                // Check 1: Aria Pressed
+            if (hasBlueFill) {
+                isLiked = true;
+            } else if (hasNoReactionLabel) {
+                isLiked = false;
+            } else if (likeBtn) {
+                // Fallback checks
                 if (likeBtn.getAttribute('aria-pressed') === 'true') isLiked = true;
-
-                // Check 2: Class "active"
                 if (likeBtn.className.includes('active') || likeBtn.classList.contains('artdeco-button--primary')) isLiked = true;
-
-                // Check 3: Computed Color (The real MVP)
-                // Check 3: The "Blue Circle" (Definitive User Proof)
-                // We check the RAW HTML for the hex code of the blue circle
-                // User provided: <circle cx="12" ... fill="#378fe9">
-                if (likeBtn.innerHTML.includes('#378fe9')) {
-                    isLiked = true;
-                }
+                const label = (likeBtn.getAttribute('aria-label') || '').toLowerCase();
+                if (label.includes('undo') || label.includes('reacted') || label.includes('remove reaction')) isLiked = true;
+                if (likeBtn.innerHTML.includes('#378fe9') || likeBtn.innerHTML.includes('artdeco-button__icon--filled')) isLiked = true;
             }
 
             if (likeBtn && !isLiked) {
@@ -488,8 +527,8 @@ async function startAutoCatchUp(settings = {}) {
             }
 
             // 2. MESSAGE ACTION
-            if (cardText.includes('MESSAGE SENT')) {
-                // log(`   Skipping Message for ${name} (Already Sent).`, 'DEBUG');
+            if (alreadyInHistory || cardText.includes('MESSAGE SENT')) {
+                log(`   Skipping Message for ${name} (History/Sent).`, 'DEBUG');
                 continue;
             }
 
