@@ -1,0 +1,27 @@
+name: Publish to Edge Store
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Zip Extension
+        run: |
+          zip -r linkedin_extension.zip . -x "*.git*"
+
+      - name: Upload to Edge Add-ons
+        uses: wdzeng/edge-addon@v1
+        with:
+          product-id: ${{ secrets.EDGE_PRODUCT_ID }}
+          client-id: ${{ secrets.EDGE_CLIENT_ID }}
+          client-secret: ${{ secrets.EDGE_API_KEY }}
+          file: linkedin_extension.zip

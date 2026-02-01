@@ -1,0 +1,13 @@
+# Secrets
+edge_secrets.json
+secrets.json
+*.env
+
+# Build Artifacts
+*.zip
+*.log
+node_modules/
+
+# OS Files
+.DS_Store
+Thumbs.db
