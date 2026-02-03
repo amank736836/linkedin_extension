@@ -139,9 +139,19 @@ function updateUI(status) {
         stopCatchUpBtn.disabled = !status.isCatchingUp;
     }
 
+    const startPagesBtn = document.getElementById('startPagesBtn');
+    const stopPagesBtn = document.getElementById('stopPagesBtn');
+    const pagesCountDisplay = document.getElementById('pagesCount');
+
+    if (startPagesBtn) {
+        startPagesBtn.disabled = status.isPagesRunning;
+        stopPagesBtn.disabled = !status.isPagesRunning;
+    }
+
     countDisplay.innerText = status.applicationCount || 0;
     if (connectCountDisplay) connectCountDisplay.innerText = status.connectCount || 0;
     if (catchUpCountDisplay) catchUpCountDisplay.innerText = status.catchUpCount || 0;
+    if (pagesCountDisplay) pagesCountDisplay.innerText = status.pagesCount || 0;
 }
 
 startBtn.addEventListener('click', () => {
@@ -204,6 +214,12 @@ stopBtn.addEventListener('click', () => {
 });
 
 startConnectBtn.addEventListener('click', () => {
+    // Save the setting immediately so it persists across redirects/reloads
+    const connectDelayInput = document.getElementById('connectDelay');
+    if (connectDelayInput) {
+        chrome.storage.local.set({ connectDelay: connectDelayInput.value });
+    }
+
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]) {
             // 1. Check URL & Auto-Redirect
@@ -223,7 +239,14 @@ startConnectBtn.addEventListener('click', () => {
                 return;
             }
 
-            chrome.tabs.sendMessage(tabs[0].id, { action: 'startConnect' }, (response) => {
+            // Grab the delay setting from the UI
+            const connectDelayInput = document.getElementById('connectDelay');
+            const delayVal = connectDelayInput ? parseInt(connectDelayInput.value, 10) : 10;
+
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: 'startConnect',
+                settings: { delay: delayVal } // Pass the settings!
+            }, (response) => {
                 // Auto-Restart on Connection Error
                 if (chrome.runtime.lastError) {
                     console.error('Runtime error:', chrome.runtime.lastError);
@@ -266,6 +289,89 @@ stopConnectBtn.addEventListener('click', () => {
         }
     });
 });
+
+
+// Pages Logic
+const startPagesBtn = document.getElementById('startPagesBtn');
+const stopPagesBtn = document.getElementById('stopPagesBtn');
+const pagesMode = document.getElementById('pagesMode');
+const pagesLimit = document.getElementById('pagesLimit');
+
+if (startPagesBtn) {
+    startPagesBtn.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]) {
+                const currentUrl = tabs[0].url;
+                const isSearch = currentUrl.includes('search/results/companies');
+                const isNetwork = currentUrl.includes('mynetwork/network-manager/company') || currentUrl.includes('mynetwork/invite-connect/connections/');
+                // Redirect logic
+                if (!isSearch && !isNetwork) {
+                    const mode = pagesMode.value;
+                    let targetUrl = '';
+
+                    if (mode === 'unfollow') {
+                        targetUrl = 'https://www.linkedin.com/mynetwork/network-manager/company/';
+                    } else {
+                        targetUrl = 'https://www.linkedin.com/search/results/companies/?keywords=software';
+                    }
+
+                    chrome.tabs.update(tabs[0].id, { url: targetUrl });
+
+                    const logItem = document.createElement('div');
+                    logItem.style.color = '#e6b800';
+                    logItem.innerText = `Redirecting to ${mode === 'unfollow' ? 'Following' : 'Search'}... Auto-starting in 10s... ⏳`;
+                    logDisplay.appendChild(logItem);
+                    logDisplay.scrollTop = logDisplay.scrollHeight;
+
+                    setTimeout(() => {
+                        logItem.innerText = "Auto-starting now... 🚀";
+                        startPagesBtn.click();
+                    }, 10000);
+                    return;
+                }
+
+                const settings = {
+                    mode: pagesMode.value, // 'follow' or 'unfollow'
+                    limit: parseInt(pagesLimit.value) || 50
+                };
+
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'startPages', settings }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        const logItem = document.createElement('div');
+                        logItem.style.color = '#ff0000';
+                        logItem.innerText = "Connection Failed. Reloading... Auto-start in 10s... ⏳";
+                        logDisplay.appendChild(logItem);
+
+                        chrome.tabs.reload(tabs[0].id);
+                        setTimeout(() => {
+                            startPagesBtn.click();
+                        }, 10000);
+                        return;
+                    }
+                    if (response) {
+                        startPagesBtn.disabled = true;
+                        stopPagesBtn.disabled = false;
+                    }
+                });
+            }
+        });
+    });
+}
+
+if (stopPagesBtn) {
+    stopPagesBtn.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'stopPages' }, (response) => {
+                    if (response) {
+                        startPagesBtn.disabled = false;
+                        stopPagesBtn.disabled = true;
+                    }
+                });
+            }
+        });
+    });
+}
 
 // Catch Up Logic
 const startCatchUpBtn = document.getElementById('startCatchUpBtn');
@@ -428,5 +534,11 @@ chrome.runtime.onMessage.addListener((request) => {
     } else if (request.action === 'updateCatchUpCount') {
         const catchUpCountDisplay = document.getElementById('catchUpCount');
         if (catchUpCountDisplay) catchUpCountDisplay.innerText = request.count;
+    } else if (request.action === 'updatePagesCount') {
+        const pagesCountDisplay = document.getElementById('pagesCount');
+        if (pagesCountDisplay) pagesCountDisplay.innerText = request.count;
+    } else if (request.action === 'pagesComplete') {
+        startPagesBtn.disabled = false;
+        stopPagesBtn.disabled = true;
     }
 });
