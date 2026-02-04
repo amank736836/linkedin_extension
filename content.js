@@ -753,6 +753,7 @@ async function startAutoCatchUp(settings = {}) {
     }
 
     isCatchingUp = false;
+    chrome.storage.local.set({ catchUpRunning: false });
     log('🎉 Catch-Up operation complete.', 'INFO');
 }
 
@@ -957,20 +958,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // --- PERSISTENCE INIT ---
-// Check if we should auto-resume Auto-Connect after a page reload
+
+// --- PERSISTENCE INIT ---
+
+// 1. Check Auto-Connect Persistence
 chrome.storage.local.get(['autoConnectRunning', 'connectSettings', 'connectCount'], (data) => {
     if (data.autoConnectRunning) {
-        // SAFETY: Only resume if we are on the correct page!
         if (window.location.href.includes('mynetwork/grow/')) {
             log('🔄 Persistent Auto-Resume detected. Restarting Auto-Connect in 4s... ⏱️', 'INFO');
             if (data.connectCount) connectCount = data.connectCount;
             setTimeout(() => startAutoConnect(data.connectSettings || {}), 4000);
         } else {
-            log('⚠️ Auto-Connect persistence flag is ON, but we are not on the Grow page. Pausing.', 'DEBUG');
-            // Optional: Clear flag? Or leave it in case they go back? 
-            // Better to leave it, but don't run.
-            // Actually, if they started Catch-Up, we want to kill it.
-            // The Start CatchUp handler clears it.
+            log('⚠️ Auto-Connect persistence flag is ON, but we are off-page. Pausing.', 'DEBUG');
+        }
+    }
+});
+
+// 2. Check Catch-Up Persistence (Redirect Recovery)
+chrome.storage.local.get(['catchUpRunning', 'catchUpSettings'], (data) => {
+    if (data.catchUpRunning) {
+        const currentUrl = window.location.href;
+
+        // CASE A: We are on the Catch-Up page (Resume)
+        if (currentUrl.includes('mynetwork/catch-up/')) {
+            log('🔄 Catch-Up Persistence detected. Resuming in 4s... 🎂', 'INFO');
+            setTimeout(() => startAutoCatchUp(data.catchUpSettings || {}), 4000);
+        }
+        // CASE B: We got redirected to Messaging (Redirect Back)
+        else if (currentUrl.includes('/messaging/thread/') || currentUrl.includes('/messaging/compose/')) {
+            log('🔀 Redirected to Messaging detected! Going back to Catch-Up in 3s... 🔙', 'WARNING');
+            setTimeout(() => {
+                window.location.href = 'https://www.linkedin.com/mynetwork/catch-up/all/';
+            }, 3000);
+        }
+        // CASE C: Lost (Do nothing, or warn)
+        else {
+            log('⚠️ Catch-Up Running flag detected, but on unknown page. Pausing.', 'DEBUG');
         }
     }
 });

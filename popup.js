@@ -302,26 +302,24 @@ if (startPagesBtn) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
                 const currentUrl = tabs[0].url;
-                const isSearch = currentUrl.includes('search/results/companies');
-                const isNetwork = currentUrl.includes('mynetwork/network-manager/company') || currentUrl.includes('mynetwork/invite-connect/connections/');
-                // Redirect logic
-                if (!isSearch && !isNetwork) {
-                    const mode = pagesMode.value;
-                    let targetUrl = '';
 
-                    if (mode === 'unfollow') {
-                        targetUrl = 'https://www.linkedin.com/mynetwork/network-manager/company/';
-                    } else {
-                        targetUrl = 'https://www.linkedin.com/search/results/companies/?keywords=software';
-                    }
+                // Flexible URL check for both Search and Network Manager
+                const isPagesUrl = currentUrl.includes('/search/results/') ||
+                    currentUrl.includes('/mynetwork/network-manager/company/');
 
-                    chrome.tabs.update(tabs[0].id, { url: targetUrl });
-
+                if (!isPagesUrl) {
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800';
-                    logItem.innerText = `Redirecting to ${mode === 'unfollow' ? 'Following' : 'Search'}... Auto-starting in 10s... ⏳`;
+                    logItem.innerText = `Redirecting to ${pagesMode.value === 'unfollow' ? 'Following' : 'Search'}... Auto-starting in 10s... ⏳`;
                     logDisplay.appendChild(logItem);
                     logDisplay.scrollTop = logDisplay.scrollHeight;
+
+                    // Determine Target URL
+                    const targetUrl = pagesMode.value === 'unfollow'
+                        ? 'https://www.linkedin.com/mynetwork/network-manager/company/'
+                        : 'https://www.linkedin.com/search/results/companies/';
+
+                    chrome.tabs.update(tabs[0].id, { url: targetUrl });
 
                     setTimeout(() => {
                         logItem.innerText = "Auto-starting now... 🚀";
@@ -330,9 +328,19 @@ if (startPagesBtn) {
                     return;
                 }
 
+                // Explicitly Parse Limit
+                const limitVal = parseInt(pagesLimit.value, 10);
+                const appliedLimit = (isNaN(limitVal) || limitVal < 1) ? 50 : limitVal;
+
+                // LOG IT
+                const logItem = document.createElement('div');
+                logItem.innerText = `Rocket Launch! 🚀 Mode: ${pagesMode.value}, Limit: ${appliedLimit}`;
+                logDisplay.appendChild(logItem);
+                logDisplay.scrollTop = logDisplay.scrollHeight;
+
                 const settings = {
-                    mode: pagesMode.value, // 'follow' or 'unfollow'
-                    limit: parseInt(pagesLimit.value) || 50
+                    mode: pagesMode.value,
+                    limit: appliedLimit
                 };
 
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'startPages', settings }, (response) => {
@@ -400,8 +408,13 @@ startCatchUpBtn.addEventListener('click', () => {
                 return;
             }
 
+            // PERSISTENCE: Save state so we can resume if redirected
             const type = catchUpType.value;
-            // DEBUG LOG
+            chrome.storage.local.set({
+                catchUpRunning: true,
+                catchUpSettings: { type }
+            });
+
             console.log('Sending startCatchUp message to tab:', tabs[0].id);
 
             chrome.tabs.sendMessage(tabs[0].id, { action: 'startCatchUp', settings: { type } }, (response) => {
