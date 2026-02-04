@@ -42,6 +42,19 @@ if (startBtn) {
                 logDisplay.appendChild(logItem);
 
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'start', settings }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        const logItem = document.createElement('div');
+                        logItem.style.color = '#ff0000';
+                        logItem.innerText = "[APPLY] Connection Failed. Reloading... Auto-start in 5s... ⏳";
+                        logDisplay.appendChild(logItem);
+
+                        chrome.tabs.reload(tabs[0].id);
+                        setTimeout(() => {
+                            logItem.innerText = "[APPLY] Auto-starting now... 🚀";
+                            startBtn.click();
+                        }, 5000);
+                        return;
+                    }
                     if (response) {
                         startBtn.disabled = true;
                         stopBtn.disabled = false;
