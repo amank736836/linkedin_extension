@@ -60,25 +60,40 @@ if (autoFillBtn) {
                         // Save Immediately
                         saveSettings();
 
-                        let successMsg = "✅ Info Auto-Filled from Profile!";
+                        let successMsg = "✅ Info Auto-Filled! Now setting up Questions...";
                         if (data.openToWork) successMsg += " (Open To Work Detected)";
 
                         logItem.innerText = successMsg;
                         logItem.style.color = 'green';
 
-                        // Switch to Settings tab to show results
-                        document.querySelector('[data-tab="settings"]').click();
-                        document.querySelector('[data-subtab="profile"]').click();
+                        // --- ONBOARDING: Seed Common Questions ---
+                        chrome.storage.local.get(['unknownQuestions'], (res) => {
+                            const currentQs = res.unknownQuestions || [];
+                            const commonQs = [
+                                "How many years of work experience do you have with " + (data.keywords || "Software Development") + "?",
+                                "Are you willing to relocate with an employer?",
+                                "Will you now, or in the future, require sponsorship for employment visa status (e.g. H-1B visa status)?",
+                                "Do you have a valid driver's license?",
+                                "What is your notice period?"
+                            ];
 
-                        // Warn about missing critical info
-                        const missing = [];
-                        if (!document.getElementById('email').value) missing.push("Email");
-                        if (!document.getElementById('phone').value) missing.push("Phone");
-                        if (!document.getElementById('salary').value) missing.push("Salary");
+                            // Add only unique new questions
+                            const newQs = [...new Set([...currentQs, ...commonQs])];
 
-                        if (missing.length > 0) {
-                            alert(`✅ Profile details loaded!\n\n⚠️ IMPORTANT: We could not find your ${missing.join(', ')}.\n\nPlease fill these manually in the Settings tab before starting.`);
-                        }
+                            chrome.storage.local.set({ unknownQuestions: newQs }, () => {
+                                // Redirect to Library Tab
+                                setTimeout(() => {
+                                    document.querySelector('[data-tab="settings"]').click();
+                                    document.querySelector('[data-subtab="library"]').click();
+
+                                    // Trigger re-render if possible (hacky directly, but updateUI loop might catch it or we just reload)
+                                    // Better: Call renderLibrary directly
+                                    renderLibrary(newQs, {});
+
+                                    alert("✅ Profile Loaded!\n\n👉 PLEASE ANSWER these common questions to automate applications faster!");
+                                }, 1000);
+                            });
+                        });
 
                     } else {
                         logItem.innerText = "⚠️ Could not read profile. Make sure you are on your profile page.";

@@ -1,32 +1,88 @@
-# LinkedIn Easy Apply Automator (Browser Extension)
+# 🚀 LinkedIn Automator Pro
 
-This extension allows you to automate job applications on LinkedIn with human-like behavior and persistent access.
+LinkedIn Automator Pro is a powerful, production-grade browser extension designed to streamline your LinkedIn experience. From automated job applications to smart network growth, this tool handles the repetitive tasks so you can focus on building meaningful professional connections.
 
-## 🛠️ How to Load the Extension
+---
 
-1.  Open **Google Chrome** or **Microsoft Edge**.
-2.  Go to the Extensions page:
-    -   Chrome: `chrome://extensions/`
-    -   Edge: `edge://extensions/`
-3.  Enable **Developer mode** (toggle in the top right or bottom left).
-4.  Click **Load unpacked**.
-5.  Select the folder: `d:\Gemini\Automation\linkedin_extension`.
+## ✨ Key Features
 
-## 🚀 How to Use
+### 🛠️ Smart Onboarding (Auto-Fill)
+*   **Profile Analysis**: Automatically scrapes your Name, Headline, Location, and "About" section.
+*   **Smart Seeding**: Automatically populates your Question Library with common application questions.
+*   **guided Setup**: Seamlessly redirects you to critical settings to ensure you are ready for automation.
 
-1.  Navigate to a [LinkedIn Jobs search page](https://www.linkedin.com/jobs/search/).
-2.  Click the **LinkedIn Automator icon** in your extension toolbar (pin it for easy access).
-3.  Click **Start Applying**.
-4.  The extension will process jobs automatically with a 45-second delay between applications.
-5.  You can watch the application count and logs directly in the popup window!
+### 💼 Career Hub (Auto-Apply)
+*   **High-Volume Applications**: Automate "Easy Apply" jobs with human-like delays.
+*   **Filter Persistence**: Remembers your preferred Keywords, Location, and Seniority filters.
+*   **Safety Limits**: Set a daily/session cap on applications to keep your account safe.
 
-## ✨ Features
-- **Persistence**: Won't disappear if you refresh the page (just re-open the popup).
-- **Human-like**: Uses natural delays and variable scrolling.
-- **Auto-Fill**: Specifically tuned with your details (Aman Kumar, 8 LPA, Bengaluru).
-- **Control**: Start and stop anytime from the UI.
+### 🤝 Network Growth (Auto-Connect)
+*   **bulk Connection Requests**: Automatically sends invites to relevant professionals on the "Grow" page.
+*   **Variable Delays**: Implements random wait times between requests to mimic human behavior.
 
-## 📂 Extension Files
-- `manifest.json`: Configuration.
-- `content.js`: Automation logic.
-- `popup.html/js`: User interface.
+### 🎂 Relation Manager (Catch-Up)
+*   **Automated Greetings**: Sends personalized "Happy Birthday" or "Congratulations" messages for work anniversaries.
+*   **Multiple Modes**: Choose to process all events or filter specifically for birthdays or career milestones.
+
+### 🏢 Company Cleanup (Pages)
+*   **Mass Unfollow/Follow**: Manage your following list by automatically processing company pages from search results.
+*   **Scroll Limits**: Built-in protection to prevent infinite scrolling loops.
+
+---
+
+## 🛠️ Installation Guide
+
+1.  **Download/Clone**: Ensure you have this project folder on your local machine.
+2.  **Open Extensions Page**:
+    *   Chrome: Go to `chrome://extensions/`
+    *   Edge: Go to `edge://extensions/`
+3.  **Developer Mode**: Toggle the **Developer mode** switch in the top-right corner.
+4.  **Load Unpacked**: Click **Load unpacked** and select the `linkedin_extension` folder.
+5.  **Pin for Ease**: Pin the "LinkedIn Automator Pro" icon for quick access.
+
+---
+
+## 📖 Guided Setup Flow
+
+For new users, we recommend the following flow to get started in seconds:
+
+1.  **Analyze Your Profile**:
+    *   Navigate to your own LinkedIn Profile page.
+    *   Open the extension and go to **Settings > Profile**.
+    *   Click **✨ Auto-Fill Info from Profile**.
+2.  **Setup the Library**:
+    *   After auto-filling, you will be automatically taken to the **Library** tab.
+    *   Answer the common questions seeded there (e.g., "Years of Experience"). These answers are used to fill job application forms automatically.
+3.  **Set Your Filters**:
+    *   Go to **Settings > Filters** and define your job search targets.
+4.  **Start Automating**:
+    *   Go to the **Apply** tab, set a target number, and click **Start**.
+
+---
+
+## 🛡️ Robustness & Safety
+
+*   **Single-Task Mode**: The extension intelligently stops existing automation before starting a new one to prevent conflicts.
+*   **Auto-Retry**: If the browser loses connection with the page, the extension will automatically reload the tab and retry the action after 5 seconds.
+*   **DOM Resilience**: Uses multiple fallback selectors to identify UI elements even if LinkedIn changes their layout.
+
+---
+
+## 📂 Technical Architecture
+
+This extension follows a **Modular Architecture** for maximum reliability:
+*   `content.js`: The central orchestrator.
+*   `features/*.js`: Dedicated logic for Apply, Connect, Catch-Up, and Pages.
+*   `popup_scripts/*.js`: Clean separation of UI logic and state management.
+*   `utils.js`: Shared utility and constant layer.
+
+---
+
+## ⚠️ Privacy & Ethics
+*   **Data Locality**: All your data (Name, Email, Answers) is stored **locally** on your device using `chrome.storage`. No data is ever sent to external servers.
+*   **Ethical Use**: This tool is designed for efficiency, not spam. We recommend using reasonable delays and following LinkedIn's professional community policies.
+
+---
+
+*Found a bug? Have a suggestion? Feel free to reach out!*
+
