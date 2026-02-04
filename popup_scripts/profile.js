@@ -44,13 +44,26 @@ if (autoFillBtn) {
                         // Populate Fields
                         if (data.fullName) document.getElementById('fullName').value = data.fullName;
                         if (data.location) document.getElementById('location').value = data.location;
-                        if (data.keywords) document.getElementById('keywords').value = data.keywords;
+
+                        // Save Public Profile URL (Silent)
+                        if (data.publicProfileUrl) {
+                            chrome.storage.local.set({ publicProfileUrl: data.publicProfileUrl });
+                        }
+
+                        if (data.keywords) {
+                            let k = data.keywords;
+                            if (data.openToWork) k += " (Open to Work)";
+                            document.getElementById('keywords').value = k;
+                        }
                         if (data.experienceLevel) document.getElementById('experienceLevel').value = data.experienceLevel;
 
                         // Save Immediately
                         saveSettings();
 
-                        logItem.innerText = "✅ Info Auto-Filled! Please check Phone/Email.";
+                        let successMsg = "✅ Info Auto-Filled from Profile!";
+                        if (data.openToWork) successMsg += " (Open To Work Detected)";
+
+                        logItem.innerText = successMsg;
                         logItem.style.color = 'green';
 
                         // Switch to Settings tab to show results
