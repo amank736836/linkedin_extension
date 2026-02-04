@@ -120,3 +120,20 @@ function saveSettings() {
         console.log('Settings saved');
     });
 }
+
+// LOG LISTENER (Added)
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'log') {
+        const logItem = document.createElement('div');
+        logItem.innerText = request.message;
+
+        // Auto-Scroll
+        logDisplay.appendChild(logItem);
+        logDisplay.scrollTop = logDisplay.scrollHeight;
+
+        // Cleanup old logs if too many (optional optimization)
+        if (logDisplay.childNodes.length > 200) {
+            logDisplay.removeChild(logDisplay.firstChild);
+        }
+    }
+});

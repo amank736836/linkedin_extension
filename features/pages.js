@@ -10,7 +10,7 @@ window.runPagesAutomation = async function (settings = {}) {
     log(`🏢 Starting Pages Automation (Mode: ${mode.toUpperCase()}, Limit: ${limit})...`, 'INFO');
 
     let scrollAttempts = 0;
-    const maxScrolls = 20;
+    const maxScrolls = 5;
 
     while (LinkedInBot.isPagesRunning && LinkedInBot.pagesCount < limit && scrollAttempts < maxScrolls) {
 
@@ -130,6 +130,11 @@ window.runPagesAutomation = async function (settings = {}) {
     }
 
     LinkedInBot.isPagesRunning = false;
-    log('🎉 Pages Automation complete.', 'INFO');
+
+    if (scrollAttempts >= maxScrolls) {
+        log(`🛑 Stopped: No actionable buttons found after ${maxScrolls} consecutive scrolls.`, 'WARNING');
+    } else {
+        log('🎉 Pages Automation complete.', 'INFO');
+    }
     chrome.runtime.sendMessage({ action: 'pagesComplete' });
 };

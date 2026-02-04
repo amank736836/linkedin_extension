@@ -37,6 +37,7 @@
                 "features/connect.js",
                 "features/catchup.js",
                 "features/pages.js",
+                "features/profile_scraper.js",
                 "content.js"
             ]
         }

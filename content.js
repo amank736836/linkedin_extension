@@ -7,7 +7,7 @@ log('LinkedIn Automator Content Script Loaded (Modular).', 'INFO');
 
 // --- HELPER: Stop All Automation ---
 function stopAllAutomation() {
-    log('🛑 Stopping ALL other automation tasks to ensure single-feature mode.', 'INFO');
+    log('🛑 Stopping ALL other automation tasks (Single-Task Mode).', 'INFO');
 
     // Stop Flags
     LinkedInBot.isRunning = false;      // Apply
@@ -28,7 +28,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // 1. Start Automation (Easy Apply)
     if (request.action === 'start') {
         stopAllAutomation(); // Enforce mutual exclusion
-        // Small delay to let loops exit
+
         setTimeout(() => {
             startAutomation(request.settings);
         }, 500);
@@ -97,6 +97,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             pagesCount: LinkedInBot.pagesCount
         });
     }
+    // 10. Scrape Profile (Onboarding)
+    else if (request.action === 'scrapeProfile') {
+        if (typeof window.scrapeProfileData === 'function') {
+            window.scrapeProfileData().then(data => {
+                sendResponse({ status: 'scraped', data });
+            });
+            return true; // Keep channel open for async response
+        } else {
+            sendResponse({ status: 'error', message: 'Scraper not loaded' });
+        }
+    }
 });
 
 // --- PERSISTENCE INIT ---
@@ -107,8 +118,8 @@ chrome.storage.local.get(['autoConnectRunning', 'connectSettings', 'connectCount
         if (window.location.href.includes('mynetwork/grow/')) {
             log('🔄 Persistent Auto-Resume detected. Restarting Auto-Connect in 4s... ⏱️', 'INFO');
             if (data.connectCount) LinkedInBot.connectCount = data.connectCount;
-            // Ensure others are off logic? Technically persistence is unique.
-            // But good to be safe.
+
+            // Ensure others are off
             LinkedInBot.isCatchingUp = false;
             LinkedInBot.isRunning = false;
 

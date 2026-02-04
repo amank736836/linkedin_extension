@@ -55,6 +55,9 @@ chrome.storage.local.get([...fields, 'unknownQuestions', 'customLibrary'], (data
 
     // Sync button states with Content Script immediately
     syncStatus();
+
+    // Poll for status updates every second
+    setInterval(syncStatus, 1000);
 });
 
 function syncStatus() {
