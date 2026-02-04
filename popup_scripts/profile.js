@@ -71,10 +71,11 @@ if (autoFillBtn) {
                             const currentQs = res.unknownQuestions || [];
                             const commonQs = [
                                 "How many years of work experience do you have with " + (data.keywords || "Software Development") + "?",
+                                "What is your expected salary (LPA/Monthly)?",
+                                "What is your notice period?",
                                 "Are you willing to relocate with an employer?",
                                 "Will you now, or in the future, require sponsorship for employment visa status (e.g. H-1B visa status)?",
-                                "Do you have a valid driver's license?",
-                                "What is your notice period?"
+                                "Do you have a valid driver's license?"
                             ];
 
                             // Add only unique new questions
