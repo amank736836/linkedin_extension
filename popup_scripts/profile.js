@@ -1,6 +1,19 @@
 // --- POPUP FEATURE: PROFILE ONBOARDING ---
 
 const autoFillBtn = document.getElementById('autoFillBtn');
+const skipOnboardingBtn = document.getElementById('skipOnboardingBtn');
+const onboardingBanner = document.getElementById('onboardingBanner');
+
+function hideOnboarding() {
+    if (onboardingBanner) onboardingBanner.style.display = 'none';
+    chrome.storage.local.set({ onboardingComplete: true });
+}
+
+if (skipOnboardingBtn) {
+    skipOnboardingBtn.addEventListener('click', () => {
+        hideOnboarding();
+    });
+}
 
 if (autoFillBtn) {
     autoFillBtn.addEventListener('click', () => {
@@ -18,9 +31,8 @@ if (autoFillBtn) {
                     logItem.innerText = "⚠️ Please go to your LinkedIn Profile page first!";
                     logItem.style.color = 'red';
 
-                    // Helper redirect
-                    const targetUrl = "https://www.linkedin.com/in/"; // Redirect to 'me' usually works or feed
-                    // No, let's just warn.
+                    // Show a cleaner error for onboarding
+                    alert("⚠️ Please go to your LinkedIn Profile page first to use Auto-Fill!");
                     return;
                 }
 
@@ -59,6 +71,7 @@ if (autoFillBtn) {
 
                         // Save Immediately
                         saveSettings();
+                        hideOnboarding();
 
                         let successMsg = "✅ Info Auto-Filled! Now setting up Questions...";
                         if (data.openToWork) successMsg += " (Open To Work Detected)";
@@ -87,8 +100,6 @@ if (autoFillBtn) {
                                     document.querySelector('[data-tab="settings"]').click();
                                     document.querySelector('[data-subtab="library"]').click();
 
-                                    // Trigger re-render if possible (hacky directly, but updateUI loop might catch it or we just reload)
-                                    // Better: Call renderLibrary directly
                                     renderLibrary(newQs, {});
 
                                     alert("✅ Profile Loaded!\n\n👉 PLEASE ANSWER these common questions to automate applications faster!");
@@ -105,3 +116,4 @@ if (autoFillBtn) {
         });
     });
 }
+

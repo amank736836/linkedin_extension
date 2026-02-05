@@ -312,12 +312,16 @@
         <div class="section-title">User Information</div>
 
         <!-- Onboarding Helper -->
-        <div
+        <div id="onboardingBanner"
           style="background: #e1f5fe; padding: 10px; border-radius: 4px; margin-bottom: 10px; font-size: 11px; border: 1px solid #0288d1;">
           <strong>&#128640; New here?</strong> Go to your LinkedIn Profile page and click below:
-          <button id="autoFillBtn" class="btn"
-            style="background: #0288d1; margin-top: 5px; font-size: 11px; padding: 6px;">&#10024; Auto-Fill Info from
-            Profile</button>
+          <div style="display: flex; gap: 5px; margin-top: 5px;">
+            <button id="autoFillBtn" class="btn"
+              style="background: #0288d1; font-size: 11px; padding: 6px; margin-top: 0;">&#10024; Auto-Fill Info from
+              Profile</button>
+            <button id="skipOnboardingBtn" class="btn"
+              style="background: #666; font-size: 11px; padding: 6px; margin-top: 0; width: auto;">Skip</button>
+          </div>
         </div>
 
         <div class="input-group">
