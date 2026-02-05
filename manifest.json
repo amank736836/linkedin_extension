@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "LinkedIn Automator",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Automate LinkedIn Easy Apply applications with human-like behavior.",
     "permissions": [
         "activeTab",

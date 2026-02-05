@@ -101,7 +101,6 @@ try {
         }
         else {
             $errorDetail = $pubStatusResponse.Content | ConvertFrom-Json
-            Write-Error "Publish Failed: $pubStatus"
             if ($errorDetail.message) {
                 Write-Host "❌ Error Message: $($errorDetail.message)" -ForegroundColor Red
             }
@@ -109,6 +108,7 @@ try {
                 Write-Host "📋 Validation Errors:" -ForegroundColor Red
                 $errorDetail.errors | ForEach-Object { Write-Host "   - $_" -ForegroundColor Yellow }
             }
+            Write-Error "Publish Failed: $pubStatus"
         }
     }
 }
