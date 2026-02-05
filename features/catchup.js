@@ -12,13 +12,16 @@ window.startAutoCatchUp = async function (settings = {}) {
     let scrollAttempts = 0;
     const maxScrolls = 5;
 
-    // Load processed names from Storage (Persistent Memory)
+    // Load processed names and count from Storage (Persistent Memory)
     let processedNames = new Set();
     try {
-        const data = await chrome.storage.local.get('catchUpProcessed');
+        const data = await chrome.storage.local.get(['catchUpProcessed', 'catchUpCount']);
         if (data.catchUpProcessed) {
             processedNames = new Set(data.catchUpProcessed);
             log(`🧠 Loaded ${processedNames.size} known contacts from memory.`, 'INFO');
+        }
+        if (data.catchUpCount) {
+            LinkedInBot.catchUpCount = data.catchUpCount;
         }
     } catch (e) { console.error(e); }
 
@@ -150,9 +153,15 @@ window.startAutoCatchUp = async function (settings = {}) {
 
             const hasPropUrn = messageLink && messageLink.href.toUpperCase().includes('PROPURN');
 
-            if (messageTriggerBtn || (messageLink && hasPropUrn)) {
+            if (messageTriggerBtn || messageLink) {
 
                 log(`🎂 Sending request to: ${name}...`, 'INFO');
+
+                // PERSISTENCE: Mark as running BEFORE we might navigate
+                chrome.storage.local.set({
+                    catchUpRunning: true,
+                    catchUpSettings: { type }
+                });
 
                 if (messageTriggerBtn) {
                     messageTriggerBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -162,6 +171,9 @@ window.startAutoCatchUp = async function (settings = {}) {
                     log('   ⚠️ No Message Button found. Clicking Link (May navigate)...', 'WARNING');
                     messageLink.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     await sleep(1000);
+
+                    // If it's a messaging/compose link, it often navigates. 
+                    // Let's try to click it and let content.js handle recovery if it navigates.
                     messageLink.click();
                 }
 
@@ -227,6 +239,7 @@ window.startAutoCatchUp = async function (settings = {}) {
                     } catch (e) { log('   ❌ Click error: ' + e.message, 'ERROR'); }
 
                     LinkedInBot.catchUpCount++;
+                    chrome.storage.local.set({ catchUpCount: LinkedInBot.catchUpCount });
                     chrome.runtime.sendMessage({ action: 'updateCatchUpCount', count: LinkedInBot.catchUpCount });
 
                     log('   👀 Verifying message sent...', 'INFO');

@@ -26,14 +26,9 @@ if (startBtn) {
                 if (!isTargetPage) {
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800';
-                    logItem.innerText = "[APPLY] Redirecting... Auto-starting in 10s... ⏳";
+                    logItem.innerText = "[APPLY] Please go to the LinkedIn Jobs Search page (with Easy Apply filter) first!";
                     logDisplay.appendChild(logItem);
                     chrome.tabs.update(tabs[0].id, { url: targetUrl.toString() });
-
-                    setTimeout(() => {
-                        logItem.innerText = "[APPLY] Auto-starting now... 🚀";
-                        startBtn.click();
-                    }, 10000);
                     return;
                 }
 
@@ -45,14 +40,8 @@ if (startBtn) {
                     if (chrome.runtime.lastError) {
                         const logItem = document.createElement('div');
                         logItem.style.color = '#ff0000';
-                        logItem.innerText = "[APPLY] Connection Failed. Reloading... Auto-start in 5s... ⏳";
+                        logItem.innerText = "[APPLY] Connection Lost. Please reload the page and click Start again.";
                         logDisplay.appendChild(logItem);
-
-                        chrome.tabs.reload(tabs[0].id);
-                        setTimeout(() => {
-                            logItem.innerText = "[APPLY] Auto-starting now... 🚀";
-                            startBtn.click();
-                        }, 5000);
                         return;
                     }
                     if (response) {

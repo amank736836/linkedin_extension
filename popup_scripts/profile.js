@@ -39,14 +39,8 @@ if (autoFillBtn) {
                 // 2. Send Scrape Command
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'scrapeProfile' }, (response) => {
                     if (chrome.runtime.lastError) {
-                        logItem.style.color = 'orange';
-                        logItem.innerText = "⚠️ Connection Lost. Reloading page & Retrying in 5s...";
-
-                        chrome.tabs.reload(tabs[0].id);
-                        setTimeout(() => {
-                            logItem.innerText = "🔄 Retrying Auto-Fill...";
-                            autoFillBtn.click();
-                        }, 5000);
+                        logItem.style.color = 'red';
+                        logItem.innerText = "⚠️ Connection Lost. Please reload the LinkedIn page and try again.";
                         return;
                     }
 

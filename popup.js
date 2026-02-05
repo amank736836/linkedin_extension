@@ -63,13 +63,10 @@ chrome.storage.local.get([...fields, 'unknownQuestions', 'customLibrary'], (data
     if (!data.onboardingComplete) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0] && tabs[0].url.includes('linkedin.com/in/')) {
-                // We are on profile! Proactively trigger auto-fill if not already done.
-                if (autoFillBtn) {
-                    console.log("Proactively triggering Auto-Fill...");
-                    autoFillBtn.click();
-                }
-            } else {
                 // Not on profile, ensure banner is visible (it is by default in HTML, but good to be explicit)
+                if (onboardingBanner) onboardingBanner.style.display = 'block';
+            } else {
+                // Not on profile, ensure banner is visible
                 if (onboardingBanner) onboardingBanner.style.display = 'block';
             }
         });

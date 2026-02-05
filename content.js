@@ -144,16 +144,12 @@ chrome.storage.local.get(['catchUpRunning', 'catchUpSettings'], (data) => {
 
             setTimeout(() => startAutoCatchUp(data.catchUpSettings || {}), 4000);
         }
-        // CASE B: We got redirected to Messaging (Redirect Back)
-        else if (currentUrl.includes('/messaging/thread/') || currentUrl.includes('/messaging/compose/')) {
-            log('🔀 Redirected to Messaging detected! Going back to Catch-Up in 3s... 🔙', 'WARNING');
+        // CASE B: We got navigated away (Redirect Back)
+        else {
+            log('🔀 Navigation away from Catch-Up detected! Redirecting back in 3s... 🔙', 'WARNING');
             setTimeout(() => {
                 window.location.href = 'https://www.linkedin.com/mynetwork/catch-up/all/';
             }, 3000);
-        }
-        // CASE C: Lost (Do nothing, or warn)
-        else {
-            log('⚠️ Catch-Up Running flag detected, but on unknown page. Pausing.', 'DEBUG');
         }
     }
 });

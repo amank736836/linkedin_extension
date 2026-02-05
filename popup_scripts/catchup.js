@@ -11,13 +11,8 @@ if (startCatchUpBtn) {
 
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800'; // Orange/Yellow
-                    logItem.innerText = "[CATCH-UP] Redirecting... Auto-starting in 10s... ⏳";
+                    logItem.innerText = "[CATCH-UP] Redirecting to 'Catch-Up' page... Please click Start again once page loads. 🚀";
                     logDisplay.appendChild(logItem);
-
-                    setTimeout(() => {
-                        logItem.innerText = "[CATCH-UP] Auto-starting now... 🚀";
-                        startCatchUpBtn.click();
-                    }, 10000);
                     return;
                 }
 
@@ -39,13 +34,8 @@ if (startCatchUpBtn) {
                     if (chrome.runtime.lastError) {
                         const logItem = document.createElement('div');
                         logItem.style.color = '#ff0000';
-                        logItem.innerText = "[CATCH-UP] Connection Failed. Reloading... Auto-start in 10s... ⏳";
+                        logItem.innerText = "[CATCH-UP] Connection Lost. Please reload the page and click Start again.";
                         logDisplay.appendChild(logItem);
-
-                        chrome.tabs.reload(tabs[0].id);
-                        setTimeout(() => {
-                            startCatchUpBtn.click();
-                        }, 10000);
                         return;
                     }
                     if (response) {

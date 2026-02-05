@@ -17,13 +17,8 @@ if (startConnectBtn) {
 
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800';
-                    logItem.innerText = "[CONNECT] Redirecting... Auto-starting in 10s... ⏳";
+                    logItem.innerText = "[CONNECT] Redirecting to 'Grow' page... Please click Start again once page loads. 🚀";
                     logDisplay.appendChild(logItem);
-
-                    setTimeout(() => {
-                        logItem.innerText = "[CONNECT] Auto-starting now... 🚀";
-                        startConnectBtn.click();
-                    }, 10000);
                     return;
                 }
 
@@ -44,14 +39,8 @@ if (startConnectBtn) {
                         console.error('Runtime error:', chrome.runtime.lastError);
                         const logItem = document.createElement('div');
                         logItem.style.color = '#ff0000';
-                        logItem.innerText = "[CONNECT] Connection Failed. Reloading... Auto-start in 10s... ⏳";
+                        logItem.innerText = "[CONNECT] Connection Lost. Please reload the page and click Start again.";
                         logDisplay.appendChild(logItem);
-                        chrome.tabs.reload(tabs[0].id);
-
-                        setTimeout(() => {
-                            logItem.innerText = "[CONNECT] Auto-starting now... 🚀";
-                            startConnectBtn.click();
-                        }, 10000);
                         return;
                     }
 
