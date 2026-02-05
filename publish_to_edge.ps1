@@ -101,6 +101,7 @@ try {
         }
         else {
             $errorDetail = $pubStatusResponse.Content | ConvertFrom-Json
+            Write-Host "Raw API Response: $($pubStatusResponse.Content)" -ForegroundColor Yellow
             if ($errorDetail.message) {
                 Write-Host "❌ Error Message: $($errorDetail.message)" -ForegroundColor Red
             }

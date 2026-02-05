@@ -1,12 +1,11 @@
 {
     "manifest_version": 3,
     "name": "LinkedIn Automator",
-    "version": "1.0.3",
-    "description": "Automate LinkedIn Easy Apply applications with human-like behavior.",
+    "version": "1.0.5",
+    "description": "The ultimate LinkedIn productivity tool: Auto-Apply to jobs, bulk connect, and manage followings with human-like safety.",
     "permissions": [
         "activeTab",
-        "storage",
-        "management"
+        "storage"
     ],
     "default_locale": "en",
     "action": {
