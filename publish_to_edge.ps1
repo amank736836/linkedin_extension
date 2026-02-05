@@ -100,7 +100,15 @@ try {
             Write-Host "🎉 SUCCESS! Extension update published to Store." -ForegroundColor Green
         }
         else {
+            $errorDetail = $pubStatusResponse.Content | ConvertFrom-Json
             Write-Error "Publish Failed: $pubStatus"
+            if ($errorDetail.message) {
+                Write-Host "❌ Error Message: $($errorDetail.message)" -ForegroundColor Red
+            }
+            if ($errorDetail.errors) {
+                Write-Host "📋 Validation Errors:" -ForegroundColor Red
+                $errorDetail.errors | ForEach-Object { Write-Host "   - $_" -ForegroundColor Yellow }
+            }
         }
     }
 }
