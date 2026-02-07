@@ -18,18 +18,20 @@ if (startCatchUpBtn) {
 
                 // PERSISTENCE: Save state so we can resume if redirected
                 const type = catchUpType.value;
+                const limit = parseInt(document.getElementById('catchUpLimit').value, 10) || 20;
+
                 chrome.storage.local.set({
                     catchUpRunning: true,
-                    catchUpSettings: { type }
+                    catchUpSettings: { type, limit }
                 });
 
                 const logItem = document.createElement('div');
-                logItem.innerText = `[CATCH-UP] 🚀 Starting! Type: ${type}`;
+                logItem.innerText = `[CATCH-UP] 🚀 Starting! Type: ${type}, Limit: ${limit}`;
                 logDisplay.appendChild(logItem);
 
                 chrome.tabs.sendMessage(tabs[0].id, {
                     action: 'startCatchUp',
-                    settings: { type }
+                    settings: { type, limit }
                 }, (response) => {
                     if (chrome.runtime.lastError) {
                         const logItem = document.createElement('div');

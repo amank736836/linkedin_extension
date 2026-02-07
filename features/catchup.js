@@ -242,6 +242,16 @@ window.startAutoCatchUp = async function (settings = {}) {
                     chrome.storage.local.set({ catchUpCount: LinkedInBot.catchUpCount });
                     chrome.runtime.sendMessage({ action: 'updateCatchUpCount', count: LinkedInBot.catchUpCount });
 
+                    // Check Limit
+                    const sessionLimit = settings.limit || 20;
+                    log(`   📊 Progress: ${LinkedInBot.catchUpCount}/${sessionLimit}`, 'INFO');
+
+                    if (LinkedInBot.catchUpCount >= sessionLimit) {
+                        log(`✅ Catch-Up Limit Reached (${sessionLimit}). Stopping.`, 'SUCCESS');
+                        LinkedInBot.isCatchingUp = false;
+                        break;
+                    }
+
                     log('   👀 Verifying message sent...', 'INFO');
                     for (let v = 0; v < 10; v++) {
                         const c = (messageLink) ? messageLink.closest('.artdeco-card, li') : null;
@@ -259,7 +269,7 @@ window.startAutoCatchUp = async function (settings = {}) {
                 if (closeBtn) closeBtn.click();
             }
 
-            await sleep(1000);
+            await sleep(1000); // Post-action delay
         }
 
         // --- SCROLL STRATEGY ---

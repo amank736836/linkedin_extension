@@ -37,6 +37,7 @@
                 "features/catchup.js",
                 "features/pages.js",
                 "features/profile_scraper.js",
+                "features/withdraw.js",
                 "content.js"
             ]
         }

@@ -24,6 +24,14 @@ window.startAutoConnect = async function (settings = {}) {
     LinkedInBot.isConnecting = true;
     // Restore count if passed or valid
     LinkedInBot.connectCount = settings.startCount || LinkedInBot.connectCount || 0;
+
+    // SMART LIMIT: Randomize target by +/- 10
+    const originalLimit = parseInt(settings.limit, 10) || 50;
+    const smartLimit = window.getSmartLimit(originalLimit, 10);
+
+    // Override the simplistic setting
+    settings.limit = smartLimit;
+
     const delay = settings.delay || 10;
 
     // PERSISTENCE: Save state so we can resume after reload
@@ -33,7 +41,7 @@ window.startAutoConnect = async function (settings = {}) {
         connectCount: LinkedInBot.connectCount
     });
 
-    log(`🤝 Starting Refined Auto-Connect (Delay: ${delay}s)...`, 'INFO');
+    log(`🤝 Starting Refined Auto-Connect (Target: ${originalLimit} → Smart Limit: ${smartLimit}, Delay: ${delay}s)...`, 'INFO');
 
     const targetSections = [
         "People you may know based on your recent activity",

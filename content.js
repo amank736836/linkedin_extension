@@ -103,10 +103,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             window.scrapeProfileData().then(data => {
                 sendResponse({ status: 'scraped', data });
             });
-            return true; // Keep channel open for async response
+            return true;
         } else {
             sendResponse({ status: 'error', message: 'Scraper not loaded' });
         }
+    }
+    // 11. Start Auto-Withdraw
+    else if (request.action === 'startWithdraw') {
+        log('📩 Received startWithdraw command! Checking for feature script...', 'INFO');
+        stopAllAutomation();
+
+        setTimeout(() => {
+            if (typeof window.startAutoWithdraw === 'function') {
+                log('🚀 Invoking window.startAutoWithdraw()...', 'INFO');
+                window.startAutoWithdraw();
+            } else {
+                log('❌ CRITICAL ERROR: window.startAutoWithdraw is NOT defined.', 'ERROR');
+                log('   Ensure features/withdraw.js is loaded in manifest.json', 'ERROR');
+            }
+        }, 500);
+        sendResponse({ status: 'withdrawing' });
     }
 });
 

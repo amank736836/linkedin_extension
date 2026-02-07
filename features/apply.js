@@ -79,9 +79,13 @@ window.startAutomation = async function (settings) {
     if (LinkedInBot.isRunning) return;
     LinkedInBot.isRunning = true;
     LinkedInBot.userSettings = settings;
-    const targetCount = parseInt(settings.maxApps) || 43;
 
-    log('🚀 Starting Automation Run...', 'INFO');
+    // SMART LIMIT: Randomize target by +/- 10
+    const originalCount = parseInt(settings.maxApps) || 43;
+    const targetCount = window.getSmartLimit(originalCount, 10);
+
+    // Override the simplistic setting locally for this run
+    log(`🚀 Starting Automation Run (Target: ${originalCount} → Smart Limit: ${targetCount})...`, 'INFO');
 
     while (LinkedInBot.applicationCount < targetCount && LinkedInBot.isRunning) {
         // Safety Clean-up at start of loop

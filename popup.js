@@ -96,13 +96,11 @@ function syncStatus() {
 if (saveBtnFilters) {
     saveBtnFilters.addEventListener('click', () => {
         saveSettings();
-        alert('Filters saved!');
     });
 }
 
 if (saveBtnProfile) {
     saveBtnProfile.addEventListener('click', () => {
         saveSettings();
-        alert('Profile saved!');
     });
 }

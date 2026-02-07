@@ -189,11 +189,40 @@
         <span>Sent Requests: <span id="connectCount" class="count">0</span></span>
       </div>
       <div class="input-group">
-        <label>Delay between requests (seconds)</label>
+        <label>Daily Delay (seconds)</label>
         <input type="number" id="connectDelay" value="10" placeholder="10">
+      </div>
+
+      <!-- Smart Weekly Scheduling -->
+      <div
+        style="background: #e1f5fe; padding: 10px; border-radius: 4px; margin-bottom: 10px; border: 1px solid #0288d1;">
+        <div class="section-title" style="color: #0277bd; margin-bottom: 5px;">📅 Smart Weekly Schedule</div>
+
+        <div class="input-group">
+          <label>Weekly Limit (Max)</label>
+          <input type="number" id="weeklyLimit" value="100" placeholder="e.g. 100">
+        </div>
+
+        <div class="input-group">
+          <label>Distribution Strategy</label>
+          <select id="distStrategy">
+            <option value="standard">Standard (Use Daily Limit)</option>
+            <option value="even" selected>Divide Evenly (Daily = Left / Days)</option>
+            <option value="front_load">Front-Load (More early in week)</option>
+          </select>
+        </div>
+
+        <div class="count-row" style="margin-bottom: 0;">
+          <span style="font-size: 11px; color:#555;">Week Progress:</span>
+          <span style="font-size: 12px; font-weight: bold; color: #0277bd;">
+            <span id="weeklyCount">0</span> / <span id="weeklyLimitDisplay">100</span>
+          </span>
+        </div>
       </div>
       <button id="startConnectBtn" class="btn">Start Auto-Connect</button>
       <button id="stopConnectBtn" class="btn btn-stop" disabled>Stop</button>
+      <button id="withdrawBtn" class="btn" style="background: #e6b800; color: #000; margin-top: 10px;">🛡️ Withdraw Old
+        Requests (> 2 weeks)</button>
       <div class="hint">Please open "mynetwork/grow/" before starting.</div>
     </div>
   </div>
@@ -209,6 +238,10 @@
           <option value="birthday">Birthdays Only</option>
           <option value="career">Work Anniversaries Only</option>
         </select>
+      </div>
+      <div class="input-group">
+        <label>Max Messages to Send</label>
+        <input type="number" id="catchUpLimit" value="20" placeholder="20">
       </div>
       <div class="count-row">
         <span>Messages Sent: <span id="catchUpCount" class="count">0</span></span>
