@@ -161,10 +161,16 @@
     <h2>LinkedIn Automator Pro</h2>
   </div>
 
+  <!-- Tab Row 1: Main Features -->
   <div class="tabs">
     <button class="tab-btn active" data-tab="apply">Apply</button>
     <button class="tab-btn" data-tab="connect">Connect</button>
     <button class="tab-btn" data-tab="catchup">Catch Up</button>
+  </div>
+
+  <!-- Tab Row 2: Management -->
+  <div class="tabs" style="border-top: none;">
+    <button class="tab-btn" data-tab="withdraw">Withdraw</button>
     <button class="tab-btn" data-tab="pages">Pages</button>
     <button class="tab-btn" data-tab="settings">Settings</button>
   </div>
@@ -221,10 +227,21 @@
       </div>
       <button id="startConnectBtn" class="btn">Start Auto-Connect</button>
       <button id="stopConnectBtn" class="btn btn-stop" disabled>Stop</button>
-      <button id="withdrawBtn" class="btn" style="background: #e6b800; color: #000; margin-top: 10px;">🛡️ Withdraw Old
-        Requests (> 2 weeks)</button>
-      <button id="stopWithdrawBtn" class="btn btn-stop" disabled>Stop Withdraw</button>
       <div class="hint">Please open "mynetwork/grow/" before starting.</div>
+    </div>
+  </div>
+
+  <!-- Withdraw Tab -->
+  <div id="withdraw" class="tab-content">
+    <div class="section">
+      <div class="section-title">Auto-Withdraw Old Requests</div>
+      <div class="count-row">
+        <span>Withdrawn: <span id="withdrawCount" class="count">0</span></span>
+      </div>
+      <button id="withdrawBtn" class="btn" style="background: #e6b800; color: #000;">🛡️ Withdraw Old Requests (> 2
+        weeks)</button>
+      <button id="stopWithdrawBtn" class="btn btn-stop" disabled>Stop Withdraw</button>
+      <div class="hint">Open "mynetwork/invitation-manager/sent/" before starting.</div>
     </div>
   </div>
 
@@ -400,6 +417,7 @@
   <script src="popup_scripts/utils.js"></script>
   <script src="popup_scripts/apply.js"></script>
   <script src="popup_scripts/connect.js"></script>
+  <script src="popup_scripts/withdraw.js"></script>
   <script src="popup_scripts/catchup.js"></script>
   <script src="popup_scripts/pages.js"></script>
   <script src="popup_scripts/profile.js"></script>
