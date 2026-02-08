@@ -102,6 +102,7 @@ window.StatsManager = {
         connect: { total: 0, weekly: 0, daily: 0, lastReset: Date.now() },
         catchup: { total: 0, weekly: 0, daily: 0, lastReset: Date.now() },
         pages: { total: 0, weekly: 0, daily: 0, lastReset: Date.now() },
+        withdraw: { total: 0, weekly: 0, daily: 0, lastReset: Date.now() },
         weekStartDate: Date.now()
     },
 
@@ -150,7 +151,7 @@ window.StatsManager = {
                 };
 
                 // Check resets for all types
-                ['apply', 'connect', 'catchup', 'pages'].forEach(checkReset);
+                ['apply', 'connect', 'catchup', 'pages', 'withdraw'].forEach(checkReset);
 
                 // Global Weekly Timer Reset (Monday-Sunday boundary)
                 if (currentWeekStart > previousWeekStart) {

@@ -146,5 +146,12 @@ function updateAnalyticsUI() {
             set('stats_pages_daily', s.pages.daily || 0);
             set('stats_pages_weekly', s.pages.weekly || 0);
         }
+
+        // Withdraw
+        if (s.withdraw) {
+            set('stats_withdraw_daily', s.withdraw.daily || 0);
+            set('stats_withdraw_weekly', s.withdraw.weekly || 0);
+            set('stats_withdraw_total', s.withdraw.total || 0);
+        }
     });
 }

@@ -123,17 +123,39 @@ window.runPagesAutomation = async function (settings = {}) {
 
         // 3. Scroll & Pagination
         if (!actionTaken) {
-            log('No actionable buttons visible. Scrolling...', 'INFO');
-            window.scrollBy(0, 800);
-            await randomSleep(3000);
+            log('No actionable buttons visible. Attempting pagination...', 'INFO');
 
-            // "Show more" or "Next"
-            const nextBtn = document.querySelector('button.artdeco-button--secondary, button[aria-label="Next"]');
-            if (nextBtn && nextBtn.innerText.toLowerCase().includes('show more')) {
-                nextBtn.click();
+            // First, try to find and click "Show more results" button
+            const showMoreButtons = [
+                ...Array.from(document.querySelectorAll('button')).filter(b =>
+                    b.innerText.toLowerCase().includes('show more') &&
+                    !b.disabled &&
+                    b.offsetParent !== null
+                ),
+                ...Array.from(document.querySelectorAll('button[aria-label*="Show more"]'))
+            ];
+
+            if (showMoreButtons.length > 0) {
+                log(`   🔘 Clicking "Show more results" button...`, 'INFO');
+                showMoreButtons[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                await randomSleep(1000);
+                showMoreButtons[0].click();
                 await randomSleep(3000);
+                scrollAttempts = 0; // Reset scroll count as we loaded more
+            } else {
+                // No button, try scrolling
+                log('   📜 Scrolling down...', 'DEBUG');
+                window.scrollBy(0, 800);
+                await randomSleep(2000);
+
+                // "Show more" or "Next"
+                const nextBtn = document.querySelector('button.artdeco-button--secondary, button[aria-label="Next"]');
+                if (nextBtn && nextBtn.innerText.toLowerCase().includes('show more')) {
+                    nextBtn.click();
+                    await randomSleep(3000);
+                }
+                scrollAttempts++;
             }
-            scrollAttempts++;
         } else {
             scrollAttempts = 0; // Reset scroll count if we did something
         }
