@@ -59,6 +59,43 @@ chrome.storage.local.get([...fields, 'unknownQuestions', 'customLibrary'], (data
     // Poll for status updates every second
     setInterval(syncStatus, 1000);
 
+    // 5. Listen for Auto-Fill Complete Messages (from content script)
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === 'autoFillComplete' && request.data) {
+            const data = request.data;
+
+            // Populate Fields
+            if (data.fullName) document.getElementById('fullName').value = data.fullName;
+            if (data.location) document.getElementById('location').value = data.location;
+
+            // Save Public Profile URL (Silent)
+            if (data.publicProfileUrl) {
+                chrome.storage.local.set({ publicProfileUrl: data.publicProfileUrl });
+            }
+
+            if (data.keywords) {
+                let k = data.keywords;
+                if (data.openToWork) k += " (Open to Work)";
+                document.getElementById('keywords').value = k;
+            }
+            if (data.experienceLevel) document.getElementById('experienceLevel').value = data.experienceLevel;
+
+            // Save Immediately
+            saveSettings();
+
+            // Show success message in log
+            const logItem = document.createElement('div');
+            logItem.style.color = 'green';
+            logItem.innerText = "✅ Profile Auto-Filled Successfully!";
+            logDisplay.appendChild(logItem);
+
+            log('✅ Profile Auto-Filled Successfully!', 'SUCCESS');
+
+            sendResponse({ status: 'received' });
+        }
+    });
+
+
     // --- PROACTIVE ONBOARDING ---
     if (!data.onboardingComplete) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

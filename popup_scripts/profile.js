@@ -4,6 +4,9 @@ const autoFillBtn = document.getElementById('autoFillBtn');
 const skipOnboardingBtn = document.getElementById('skipOnboardingBtn');
 const onboardingBanner = document.getElementById('onboardingBanner');
 
+// Guard flag to prevent multiple simultaneous auto-fill operations
+let isAutoFilling = false;
+
 function hideOnboarding() {
     if (onboardingBanner) onboardingBanner.style.display = 'none';
     chrome.storage.local.set({ onboardingComplete: true });
@@ -17,6 +20,13 @@ if (skipOnboardingBtn) {
 
 if (autoFillBtn) {
     autoFillBtn.addEventListener('click', () => {
+        // Prevent multiple simultaneous operations
+        if (isAutoFilling) {
+            log('⚠️ Auto-Fill already in progress. Please wait...', 'WARNING');
+            return;
+        }
+
+        isAutoFilling = true;
         const logItem = document.createElement('div');
         logItem.style.color = '#0288d1';
         logItem.innerText = "🔍 Auto-Filling info from Profile...";
@@ -37,6 +47,7 @@ if (autoFillBtn) {
                         chrome.tabs.update(tabs[0].id, {
                             url: 'https://www.linkedin.com/in/me/'
                         }, () => {
+                            isAutoFilling = false; // Reset flag after redirect
                             // Update UI message
                             setTimeout(() => {
                                 logItem.innerText = "✅ Redirected! Auto-extracting profile data...";
@@ -50,8 +61,19 @@ if (autoFillBtn) {
                 // 2. Send Scrape Command
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'scrapeProfile' }, (response) => {
                     if (chrome.runtime.lastError) {
-                        logItem.style.color = 'red';
-                        logItem.innerText = "⚠️ Connection Lost. Please reload the LinkedIn page and try again.";
+                        logItem.style.color = '#ff9800';
+                        logItem.innerText = "🔄 Connection lost. Reloading page...";
+
+                        // Save state and reload page to inject content script
+                        chrome.storage.local.set({ autoFillPending: true }, () => {
+                            chrome.tabs.reload(tabs[0].id, () => {
+                                isAutoFilling = false; // Reset flag after reload
+                                setTimeout(() => {
+                                    logItem.innerText = "✅ Page reloaded! Auto-extracting profile data...";
+                                    logItem.style.color = 'green';
+                                }, 1000);
+                            });
+                        });
                         return;
                     }
 
@@ -77,6 +99,7 @@ if (autoFillBtn) {
                         // Save Immediately
                         saveSettings();
                         hideOnboarding();
+                        isAutoFilling = false; // Reset flag after successful scraping
 
                         let successMsg = "✅ Info Auto-Filled! Now setting up Questions...";
                         if (data.openToWork) successMsg += " (Open To Work Detected)";
@@ -115,6 +138,7 @@ if (autoFillBtn) {
                     } else {
                         logItem.innerText = "⚠️ Could not read profile. Make sure you are on your profile page.";
                         logItem.style.color = 'red';
+                        isAutoFilling = false; // Reset flag on error
                     }
                 });
             }

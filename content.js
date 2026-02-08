@@ -181,3 +181,73 @@ chrome.storage.local.get(['catchUpRunning', 'catchUpSettings'], (data) => {
         }
     }
 });
+
+// 3. Check Auto-Fill Pending (Auto-Resume after Redirect)
+chrome.storage.local.get(['autoFillPending'], (data) => {
+    if (data.autoFillPending) {
+        const currentUrl = window.location.href;
+
+        // Ensure we're on a profile page
+        if (currentUrl.includes('linkedin.com/in/')) {
+            log('🔄 Auto-Fill pending detected. Auto-extracting profile data in 5s...', 'INFO');
+
+            setTimeout(async () => {
+                // Directly call the scraping function (bypassing message passing)
+                if (typeof window.scrapeProfileData === 'function') {
+                    log('📊 Calling scrapeProfileData() directly...', 'INFO');
+
+                    try {
+                        const profileData = await window.scrapeProfileData();
+                        log('✅ Profile data scraped! Sending to popup...', 'SUCCESS');
+
+                        // Send data to popup via runtime message
+                        chrome.runtime.sendMessage({
+                            action: 'autoFillComplete',
+                            data: profileData
+                        }, (response) => {
+                            if (chrome.runtime.lastError) {
+                                log('⚠️ Popup not open. Data scraped but not sent to popup.', 'DEBUG');
+                            } else {
+                                log('✅ Profile data sent to popup successfully!', 'SUCCESS');
+                            }
+                        });
+                    } catch (error) {
+                        log(`❌ Error scraping profile: ${error.message}`, 'ERROR');
+                    }
+                } else {
+                    log('❌ scrapeProfileData() function not available yet. Please click Auto-Fill manually.', 'ERROR');
+                }
+
+                // Clear the pending flag
+                chrome.storage.local.set({ autoFillPending: false });
+            }, 5000);
+        } else {
+            log('⚠️ Auto-Fill pending but not on profile page. Clearing flag.', 'WARNING');
+            chrome.storage.local.set({ autoFillPending: false });
+        }
+    }
+});
+
+// 4. Check Pages Persistence (Auto-Resume after Redirect)
+chrome.storage.local.get(['pagesRunning', 'pagesSettings'], (data) => {
+    if (data.pagesRunning) {
+        const currentUrl = window.location.href;
+
+        // Check if we're on the correct page (Search or Network Manager)
+        if (currentUrl.includes('/search/results/companies/') ||
+            currentUrl.includes('/mynetwork/network-manager/company/')) {
+            log('🔄 Pages persistence detected. Auto-resuming in 5s...', 'INFO');
+
+            // Ensure others are off
+            LinkedInBot.isConnecting = false;
+            LinkedInBot.isCatchingUp = false;
+            LinkedInBot.isRunning = false;
+
+            setTimeout(() => {
+                runPagesAutomation(data.pagesSettings || {});
+            }, 5000);
+        } else {
+            log('⚠️ Pages persistence flag is ON, but we are off-page. Pausing.', 'DEBUG');
+        }
+    }
+});
