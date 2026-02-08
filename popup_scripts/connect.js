@@ -97,14 +97,20 @@ if (startConnectBtn) {
                 dailyTarget = Math.min(dailyTarget, dailyLimit);
 
                 const logItem = document.createElement('div');
-                logItem.innerText = `[CONNECT] 🚀 Starting! Smart Target: ${dailyTarget} (Weekly Left: ${Math.max(0, weeklyLimit - window.WeeklyManager.state.weeklyConnectCount)})`;
+                logItem.innerText = `[CONNECT] 🚀 Starting! Smart Target: ${dailyTarget} (Weekly Left: ${Math.max(0, weeklyLimit - window.StatsManager.state.connect.weekly)})`;
                 logDisplay.appendChild(logItem);
 
                 if (dailyTarget <= 0) {
-                    logItem.innerText = `[CONNECT] ⚠️ Weekly Limit Reached! (Used: ${window.WeeklyManager.state.weeklyConnectCount}/${weeklyLimit})`;
+                    logItem.innerText = `[CONNECT] ⚠️ Weekly Limit Reached! (Used: ${window.StatsManager.state.connect.weekly}/${weeklyLimit})`;
                     logItem.style.color = 'red';
                     return;
                 }
+
+                // Save persistence state BEFORE attempting connection
+                chrome.storage.local.set({
+                    autoConnectRunning: true,
+                    connectSettings: { delay: delayVal, limit: dailyTarget }
+                });
 
                 chrome.tabs.sendMessage(tabs[0].id, {
                     action: 'startConnect',
@@ -114,11 +120,13 @@ if (startConnectBtn) {
                     }
                 }, (response) => {
                     if (chrome.runtime.lastError) {
-                        // Error handling...
                         const logItem = document.createElement('div');
-                        logItem.style.color = '#ff0000';
-                        logItem.innerText = "[CONNECT] Connection Lost. Please reload the page.";
+                        logItem.style.color = '#ff9800';
+                        logItem.innerText = "[CONNECT] Connection lost. Reloading page... Auto-resume in 4s ⏳";
                         logDisplay.appendChild(logItem);
+
+                        // State already saved above - just reload
+                        chrome.tabs.reload(tabs[0].id);
                         return;
                     }
 

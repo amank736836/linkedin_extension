@@ -35,14 +35,19 @@ if (startCatchUpBtn) {
                 }, (response) => {
                     if (chrome.runtime.lastError) {
                         const logItem = document.createElement('div');
-                        logItem.style.color = '#ff0000';
-                        logItem.innerText = "[CATCH-UP] Connection Lost. Please reload the page and click Start again.";
+                        logItem.style.color = '#ff9800';
+                        logItem.innerText = "[CATCH-UP] Connection lost. Reloading page... Auto-resume in 4s ⏳";
                         logDisplay.appendChild(logItem);
+
+                        // Persistence state already saved above - just reload
+                        chrome.tabs.reload(tabs[0].id);
                         return;
                     }
                     if (response) {
                         startCatchUpBtn.disabled = true;
                         stopCatchUpBtn.disabled = false;
+                        // Clear running state once automation starts successfully
+                        chrome.storage.local.set({ catchUpRunning: false });
                     }
                 });
             }

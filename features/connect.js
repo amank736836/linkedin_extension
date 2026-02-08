@@ -103,14 +103,42 @@ window.startAutoConnect = async function (settings = {}) {
                 window.scrollBy(0, 1000);
                 await randomSleep(3000, 1000); // 2-4 seconds
 
+                // Check if we reached the end
                 if (document.body.scrollHeight - window.scrollY < 1500) {
-                    log('Reached end of available profile cards. Reloading for fresh leads in 5s...', 'WARNING');
+                    // FIRST: Try clicking "Load more" button if available
+                    const loadMoreBtn = document.querySelector('button[aria-label*="Load more"]') ||
+                        document.querySelector('button:has-text("Load more")') ||
+                        Array.from(document.querySelectorAll('button')).find(b => b.innerText.trim().toLowerCase() === 'load more');
+
+                    if (loadMoreBtn && loadMoreBtn.offsetParent !== null) {
+                        log('📄 Clicking "Load more" button to fetch more profiles...', 'INFO');
+                        loadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        await randomSleep(1000);
+                        loadMoreBtn.click();
+                        await randomSleep(3000, 1000); // Wait for new profiles to load
+                        continue; // Continue the loop to find new buttons
+                    }
+
+                    // SECOND: If no Load More button, check reload limit
+                    if (!LinkedInBot.connectReloadCount) LinkedInBot.connectReloadCount = 0;
+                    LinkedInBot.connectReloadCount++;
+
+                    if (LinkedInBot.connectReloadCount >= 3) {
+                        log('⛔ No more profiles available after 3 reloads. Stopping automation.', 'WARNING');
+                        LinkedInBot.isConnecting = false;
+                        chrome.storage.local.set({ autoConnectRunning: false });
+                        break;
+                    }
+
+                    log(`Reached end of page. Reloading for fresh leads (${LinkedInBot.connectReloadCount}/3)... ⏳`, 'WARNING');
                     await randomSleep(5000, 2000); // 3-7 seconds
                     window.scrollTo(0, 0);
-                    // Save state is handled in the main loop, but ensure we don't lose the flag
                     chrome.storage.local.set({ autoConnectRunning: true });
                     window.location.reload();
                     return; // Stop script execution here
+                } else {
+                    // Reset reload count if we found more content by scrolling
+                    LinkedInBot.connectReloadCount = 0;
                 }
             }
             continue;
