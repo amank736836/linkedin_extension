@@ -226,7 +226,16 @@ window.startAutoWithdraw = async function () {
             loadMoreBtn.click();
             await sleep(2000); // Wait for new content to load
         }
-        // Wait for load
+
+        // Measure height AFTER scroll + Load more
+        const afterHeight = scrollContainer ? scrollContainer.scrollHeight : document.body.scrollHeight;
+        const heightChanged = afterHeight > beforeHeight;
+
+        if (heightChanged) {
+            log(`   📏 Height changed: ${beforeHeight} → ${afterHeight} (new content loaded)`, 'DEBUG');
+        } else {
+            log(`   📏 Height unchanged: ${beforeHeight} (no new content)`, 'DEBUG');
+        }
 
         // Check for "Show more results" button
         const showMoreBtn = Array.from(document.querySelectorAll('button')).find(b =>
