@@ -121,39 +121,42 @@ window.runPagesAutomation = async function (settings = {}) {
             await randomSleep(delay);
         }
 
-        // 3. Scroll & Pagination
+        // 3. Scroll & Pagination - ALWAYS CHECK FOR BUTTON FIRST!
         if (!actionTaken) {
-            log('No actionable buttons visible. Attempting pagination...', 'INFO');
+            log('No actionable buttons visible. Checking for pagination button...', 'INFO');
 
-            // First, try to find and click "Show more results" button
-            const showMoreButtons = [
-                ...Array.from(document.querySelectorAll('button')).filter(b =>
+            // ALWAYS CHECK FOR THE BUTTON BEFORE SCROLLING
+            // Strategy 1: LinkedIn's specific load more button class
+            let showMoreBtn = document.querySelector('button.scaffold-finite-scroll__load-button');
+            log(`   🔍 Class selector found button: ${!!showMoreBtn}`, 'DEBUG');
+
+            // Strategy 2: Fallback to text search if class selector fails
+            if (!showMoreBtn) {
+                log('   🔍 Trying text-based search for "show more"...', 'DEBUG');
+                const allButtons = Array.from(document.querySelectorAll('button'));
+                showMoreBtn = allButtons.find(b =>
+                    b.innerText &&
                     b.innerText.toLowerCase().includes('show more') &&
                     !b.disabled &&
-                    b.offsetParent !== null
-                ),
-                ...Array.from(document.querySelectorAll('button[aria-label*="Show more"]'))
-            ];
+                    b.offsetParent !== null  // Must be visible
+                );
+                log(`   🔍 Text search found button: ${!!showMoreBtn}`, 'DEBUG');
+            }
 
-            if (showMoreButtons.length > 0) {
-                log(`   🔘 Clicking "Show more results" button...`, 'INFO');
-                showMoreButtons[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                await randomSleep(1000);
-                showMoreButtons[0].click();
-                await randomSleep(3000);
-                scrollAttempts = 0; // Reset scroll count as we loaded more
+            // If button exists, CLICK IT (don't scroll!)
+            if (showMoreBtn) {
+                log(`   🔘 FOUND "Show more results" button! Clicking instead of scrolling...`, 'INFO');
+                showMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                await randomSleep(500);
+                showMoreBtn.click();
+                log(`   ✅ Show more button clicked successfully!`, 'SUCCESS');
+                await randomSleep(3000);  // Wait for content to load
+                scrollAttempts = 0; // Reset scroll counter
             } else {
-                // No button, try scrolling
-                log('   📜 Scrolling down...', 'DEBUG');
+                // Only scroll if button doesn't exist
+                log('   📜 No "Show more" button found. Scrolling to load more content...', 'DEBUG');
                 window.scrollBy(0, 800);
                 await randomSleep(2000);
-
-                // "Show more" or "Next"
-                const nextBtn = document.querySelector('button.artdeco-button--secondary, button[aria-label="Next"]');
-                if (nextBtn && nextBtn.innerText.toLowerCase().includes('show more')) {
-                    nextBtn.click();
-                    await randomSleep(3000);
-                }
                 scrollAttempts++;
             }
         } else {
