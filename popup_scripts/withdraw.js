@@ -43,12 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tabs[0]) {
                     // Check if on correct page (/sent/ or /invitation-manager/sent/)
                     if (!tabs[0].url.includes('/sent/')) {
+                        // Save state BEFORE redirect for auto-resume
+                        chrome.storage.local.set({ withdrawRunning: true });
+
                         const targetUrl = 'https://www.linkedin.com/mynetwork/invitation-manager/sent/';
                         chrome.tabs.update(tabs[0].id, { url: targetUrl });
 
                         const logItem = document.createElement('div');
                         logItem.style.color = '#e6b800';
-                        logItem.innerText = "[WITHDRAW] Redirecting to Sent Invitations... Please click Start again once page loads. 🚀";
+                        logItem.innerText = "[WITHDRAW] Redirecting to Sent Invitations... Will auto-resume in 5s!";
                         logDisplay.appendChild(logItem);
                         return;
                     }

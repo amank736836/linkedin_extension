@@ -1,5 +1,24 @@
 // --- POPUP FEATURE: AUTO-CONNECT ---
 
+// AUTO-RESUME: Check if we should resume after redirect
+chrome.storage.local.get(['connectRunning', 'connectSettings'], (data) => {
+    if (data.connectRunning && data.connectSettings) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && (tabs[0].url.includes('/search/results/people') || tabs[0].url.includes('/mynetwork'))) {
+                const logItem = document.createElement('div');
+                logItem.style.color = '#00d084';
+                logItem.innerText = "[CONNECT] 🔄 Auto-Resuming from previous session! Starting in 5s...";
+                if (logDisplay) logDisplay.appendChild(logItem);
+
+                // Auto-resume after 5s delay (allow page to stabilize)
+                setTimeout(() => {
+                    if (startConnectBtn) startConnectBtn.click();
+                }, 5000);
+            }
+        });
+    }
+});
+
 if (startConnectBtn) {
     // Initialize Weekly Manager UI
     const weeklyLimitInput = document.getElementById('weeklyLimit');
@@ -47,12 +66,19 @@ if (startConnectBtn) {
             if (tabs[0]) {
                 // 1. Check URL & Auto-Redirect
                 if (!tabs[0].url.includes('mynetwork/grow/')) {
+                    // Save state BEFORE redirect for auto-resume
+                    const delayVal = delayInput ? parseInt(delayInput.value, 10) : 10;
+                    chrome.storage.local.set({
+                        connectRunning: true,
+                        connectSettings: { delay: delayVal, limit: dailyTarget }
+                    });
+
                     const targetUrl = 'https://www.linkedin.com/mynetwork/grow/';
                     chrome.tabs.update(tabs[0].id, { url: targetUrl });
 
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800';
-                    logItem.innerText = "[CONNECT] Redirecting to 'Grow' page... Please click Start again once page loads. 🚀";
+                    logItem.innerText = "[CONNECT] Redirecting to 'Grow' page... Will auto-resume in 5s!";
                     logDisplay.appendChild(logItem);
                     return;
                 }
@@ -99,6 +125,8 @@ if (startConnectBtn) {
                     if (response) {
                         startConnectBtn.disabled = true;
                         stopConnectBtn.disabled = false;
+                        // Clear running state once automation starts successfully
+                        chrome.storage.local.set({ connectRunning: false });
                     }
                 });
             }

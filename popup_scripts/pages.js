@@ -1,5 +1,24 @@
 // --- POPUP FEATURE: PAGES AUTOMATION ---
 
+// AUTO-RESUME: Check if we should resume after redirect
+chrome.storage.local.get(['pagesRunning', 'pagesSettings'], (data) => {
+    if (data.pagesRunning && data.pagesSettings) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && (tabs[0].url.includes('/mynetwork/network-manager/company') || tabs[0].url.includes('/search/results'))) {
+                const logItem = document.createElement('div');
+                logItem.style.color = '#00d084';
+                logItem.innerText = "[PAGES] 🔄 Auto-Resuming from previous session! Starting in 5s...";
+                if (logDisplay) logDisplay.appendChild(logItem);
+
+                // Auto-resume after 5s delay (allow page to stabilize)
+                setTimeout(() => {
+                    if (startPagesBtn) startPagesBtn.click();
+                }, 5000);
+            }
+        });
+    }
+});
+
 if (startPagesBtn) {
     startPagesBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -11,9 +30,17 @@ if (startPagesBtn) {
                     currentUrl.includes('/mynetwork/network-manager/company/');
 
                 if (!isPagesUrl) {
+                    // Save state BEFORE redirect for auto-resume
+                    const mode = pagesMode.value;
+                    const limitVal = parseInt(document.getElementById('pagesLimit').value, 10) || 500;
+                    chrome.storage.local.set({
+                        pagesRunning: true,
+                        pagesSettings: { mode, limit: limitVal }
+                    });
+
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800';
-                    logItem.innerText = `[PAGES] Redirecting to ${pagesMode.value === 'unfollow' ? 'Following' : 'Search'}... Auto-starting in 10s... ⏳`;
+                    logItem.innerText = `[PAGES] Redirecting to ${pagesMode.value === 'unfollow' ? 'Following' : 'Search'}... Will auto-resume in 5s!`;
                     logDisplay.appendChild(logItem);
                     logDisplay.scrollTop = logDisplay.scrollHeight;
 
@@ -23,11 +50,6 @@ if (startPagesBtn) {
                         : 'https://www.linkedin.com/search/results/companies/';
 
                     chrome.tabs.update(tabs[0].id, { url: targetUrl });
-
-                    setTimeout(() => {
-                        logItem.innerText = "[PAGES] Auto-starting now... 🚀";
-                        startPagesBtn.click();
-                    }, 10000);
                     return;
                 }
 
@@ -62,6 +84,8 @@ if (startPagesBtn) {
                     if (response) {
                         startPagesBtn.disabled = true;
                         stopPagesBtn.disabled = false;
+                        // Clear running state once automation starts successfully
+                        chrome.storage.local.set({ pagesRunning: false });
                     }
                 });
             }

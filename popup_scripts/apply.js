@@ -1,5 +1,24 @@
 // --- POPUP FEATURE: AUTO-APPLY ---
 
+// AUTO-RESUME: Check if we should resume after redirect
+chrome.storage.local.get(['applyRunning', 'applySettings'], (data) => {
+    if (data.applyRunning && data.applySettings) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && tabs[0].url.includes('/jobs/search/')) {
+                const logItem = document.createElement('div');
+                logItem.style.color = '#00d084';
+                logItem.innerText = "[APPLY] 🔄 Auto-Resuming from previous session! Starting in 5s...";
+                if (logDisplay) logDisplay.appendChild(logItem);
+
+                // Auto-resume after 5s delay (allow page to stabilize)
+                setTimeout(() => {
+                    if (startBtn) startBtn.click();
+                }, 5000);
+            }
+        });
+    }
+});
+
 if (startBtn) {
     startBtn.addEventListener('click', () => {
         const settings = {};
@@ -24,9 +43,15 @@ if (startBtn) {
                     (!settings.keywords || currentUrl.includes(encodeURIComponent(settings.keywords)));
 
                 if (!isTargetPage) {
+                    // Save state BEFORE redirect for auto-resume
+                    chrome.storage.local.set({
+                        applyRunning: true,
+                        applySettings: settings
+                    });
+
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800';
-                    logItem.innerText = "[APPLY] Please go to the LinkedIn Jobs Search page (with Easy Apply filter) first!";
+                    logItem.innerText = "[APPLY] Redirecting to Jobs Search page... Will auto-resume in 5s!";
                     logDisplay.appendChild(logItem);
                     chrome.tabs.update(tabs[0].id, { url: targetUrl.toString() });
                     return;
@@ -47,6 +72,8 @@ if (startBtn) {
                     if (response) {
                         startBtn.disabled = true;
                         stopBtn.disabled = false;
+                        // Clear running state once automation starts successfully
+                        chrome.storage.local.set({ applyRunning: false });
                     }
                 });
             }
