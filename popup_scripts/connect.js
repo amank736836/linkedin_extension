@@ -110,18 +110,31 @@ if (stopConnectBtn) {
     });
 }
 
-// WITHDRAW OLD REQUESTS
+// AUTO-WITHDRAW LOGIC
 const withdrawBtn = document.getElementById('withdrawBtn');
+const stopWithdrawBtn = document.getElementById('stopWithdrawBtn');
+
 if (withdrawBtn) {
+    // SYNC UI STATE (Check if already running)
+    chrome.storage.local.get('withdrawRunning', (data) => {
+        if (data.withdrawRunning) {
+            withdrawBtn.disabled = true;
+            if (stopWithdrawBtn) stopWithdrawBtn.disabled = false;
+
+            const logItem = document.createElement('div');
+            logItem.style.color = '#e6b800'; // Gold color
+            logItem.innerText = "[WITHDRAW] 🔄 Auto-Resumed from previous session!";
+            if (logDisplay) logDisplay.appendChild(logItem);
+        }
+    });
+
     withdrawBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
-
                 // Redirect if wrong page
                 if (!tabs[0].url.includes('invitation-manager/sent')) {
                     const targetUrl = 'https://www.linkedin.com/mynetwork/invitation-manager/sent/';
                     chrome.tabs.update(tabs[0].id, { url: targetUrl });
-
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800';
                     logItem.innerText = "[WITHDRAW] Redirecting to 'Sent' page... Please click Withdraw again once page loads.";
@@ -130,8 +143,11 @@ if (withdrawBtn) {
                 }
 
                 const logItem = document.createElement('div');
-                logItem.innerText = "[WITHDRAW] 📡 Requesting start from Content Script...";
+                logItem.innerText = "[WITHDRAW] 📡 Requesting start...";
                 logDisplay.appendChild(logItem);
+
+                // Set persistence flag immediately (so if connection fails/reloads, it resumes)
+                chrome.storage.local.set({ withdrawRunning: true });
 
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'startWithdraw' }, (response) => {
                     if (chrome.runtime.lastError) {
@@ -139,14 +155,35 @@ if (withdrawBtn) {
                         errItem.style.color = 'red';
                         errItem.innerText = "[WITHDRAW] ❌ Connection Failed. Auto-reloading page in 1s...";
                         logDisplay.appendChild(errItem);
-
-                        // Auto-reload as requested
-                        setTimeout(() => {
-                            chrome.tabs.reload(tabs[0].id);
-                        }, 1000);
+                        setTimeout(() => { chrome.tabs.reload(tabs[0].id); }, 1000);
                     } else if (response && response.status === 'withdrawing') {
                         logItem.innerText += " ✅ Signal Received!";
+
+                        if (stopWithdrawBtn) {
+                            withdrawBtn.disabled = true;
+                            stopWithdrawBtn.disabled = false;
+                        }
                     }
+                });
+            }
+        });
+    });
+}
+
+if (stopWithdrawBtn) {
+    stopWithdrawBtn.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]) {
+                const logItem = document.createElement('div');
+                logItem.innerText = "[WITHDRAW] 🛑 Stopping...";
+                logDisplay.appendChild(logItem);
+
+                // Clear persistence flag
+                chrome.storage.local.set({ withdrawRunning: false });
+
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'stopWithdraw' }, (response) => {
+                    withdrawBtn.disabled = false;
+                    stopWithdrawBtn.disabled = true;
                 });
             }
         });

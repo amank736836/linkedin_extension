@@ -1,6 +1,9 @@
 // --- FEATURE: AUTO-WITHDRAW ---
 
 window.startAutoWithdraw = async function () {
+    if (LinkedInBot.isWithdrawing) return;
+    LinkedInBot.isWithdrawing = true;
+
     // Confirm execution visually
     console.log('✅ Auto-Withdraw Script INVOKED!');
 
@@ -21,7 +24,11 @@ window.startAutoWithdraw = async function () {
 
     log('🛡️ Starting Deep Clean (Limit: 50 scrolls)...', 'INFO');
 
-    while (scrollAttempts < MAX_SCROLLS) {
+    while (LinkedInBot.isWithdrawing && scrollAttempts < MAX_SCROLLS) {
+        // SAFETY CHECK
+        await handleSecurityCheckpoint();
+        if (!LinkedInBot.isWithdrawing) break;
+
         scrollAttempts++;
         log(`🔄 Scan Cycle ${scrollAttempts}/${MAX_SCROLLS}...`, 'INFO');
 
@@ -35,6 +42,8 @@ window.startAutoWithdraw = async function () {
         let cycleWithdrawals = 0;
 
         for (const btn of withdrawBtns) {
+            if (!LinkedInBot.isWithdrawing) break;
+
             // Check if button is still in DOM (might have been removed if list shifted)
             if (!document.body.contains(btn)) continue;
 
@@ -93,35 +102,60 @@ window.startAutoWithdraw = async function () {
 
                 // The 'btn' variable is already the withdraw button we found
                 if (btn) {
+                    // Use same simple click as Auto-Connect works (line 145 in connect.js)
                     btn.click();
-                    await sleep(1500);
 
-                    // Handle Confirmation Modal
-                    const modal = document.querySelector('.artdeco-modal');
+                    // Wait loop for modal (up to 3s)
+                    let modal = null;
+                    for (let i = 0; i < 6; i++) {
+                        await sleep(500);
+                        // LinkedIn's modal has id="dialog-header", not role="dialog"
+                        modal = document.querySelector('.artdeco-modal') ||
+                            document.getElementById('dialog-header')?.parentElement ||
+                            document.querySelector('[role="main"]');
+                        if (modal) break;
+                    }
+
+                    let confirmBtn = null;
                     if (modal) {
-                        const confirmBtn = Array.from(modal.querySelectorAll('button')).find(b =>
-                            b.innerText.trim() === 'Withdraw' || b.classList.contains('artdeco-button--primary')
+                        // Find Primary Button (Blue one) inside Modal
+                        confirmBtn = Array.from(modal.querySelectorAll('button')).find(b =>
+                            b.classList.contains('artdeco-button--primary') ||
+                            b.innerText.trim() === 'Withdraw' ||
+                            (b.getAttribute('aria-label') && b.getAttribute('aria-label').includes('Withdraw'))
                         );
-                        if (confirmBtn) {
-                            confirmBtn.click();
-                            await sleep(1500);
-                            withdrawCount++;
-                            cycleWithdrawals++;
-                        }
+                    } else {
+                        // Fallback: Global search for Primary Withdraw Button (if modal container not found)
+                        log('   ⚠️ Modal container not found. Scanning globally for Confirm button...', 'WARNING');
+                        const allPrimary = Array.from(document.querySelectorAll('button.artdeco-button--primary'));
+                        confirmBtn = allPrimary.find(b => b.innerText.trim() === 'Withdraw' && b !== btn && b.offsetParent !== null);
+                    }
+
+                    if (confirmBtn) {
+                        log('   ✅ Clicking Confirm Button...', 'INFO');
+                        confirmBtn.click(); // Simple click like Auto-Connect
+                        await sleep(3000); // Wait for modal to close
+                        withdrawCount++;
+                        cycleWithdrawals++;
+                        break; // Process one withdrawal per cycle to avoid rapid-fire
+                    } else {
+                        log('   ❌ Confirm button NOT found (Modal or Global).', 'ERROR');
                     }
                 }
             }
         }
 
+        if (!LinkedInBot.isWithdrawing) break;
+
         // SCROLL / LOAD MORE LOGIC
         log(`Cycle Complete. Withdrew: ${cycleWithdrawals}. Scrolling...`, 'INFO');
 
-        // Revised Scroll Logic: Target specific LinkedIn layout containers
+        // Revised Scroll Logic: Target specific LinkedIn layout containers (and ensure they exist)
         const scrollSelectors = [
             'section.scaffold-layout__list',
             'div.scaffold-layout__list',
             '#workspace',
-            'div.artdeco-card' // Occasionally the card container itself
+            'div.artdeco-card'
         ];
 
         let scrolled = false;
@@ -158,5 +192,28 @@ window.startAutoWithdraw = async function () {
         }
     }
 
-    log(`🎉 Auto-Withdraw complete. Removed ${withdrawCount} old requests.`, 'INFO');
+    // Clear flag on complete
+    LinkedInBot.isWithdrawing = false;
+    chrome.storage.local.set({ withdrawRunning: false });
+    log(`🎉 Auto-Withdraw complete (or stopped). Removed ${withdrawCount} old requests.`, 'INFO');
 };
+
+window.stopAutoWithdraw = function () {
+    LinkedInBot.isWithdrawing = false;
+    chrome.storage.local.set({ withdrawRunning: false });
+    log('🛑 Stopping Auto-Withdraw...', 'WARNING');
+};
+
+// --- INITIALIZATION ---
+// Check if we should auto-start (after reload)
+(async function init() {
+    const data = await chrome.storage.local.get('withdrawRunning');
+    if (data.withdrawRunning) {
+        log('🔄 Auto-Withdraw Persistence Detected. Resuming...', 'INFO');
+        setTimeout(() => {
+            if (typeof window.startAutoWithdraw === 'function') {
+                window.startAutoWithdraw();
+            }
+        }, 2000);
+    }
+})();

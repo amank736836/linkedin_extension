@@ -124,6 +124,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }, 500);
         sendResponse({ status: 'withdrawing' });
     }
+    // 12. Stop Auto-Withdraw
+    else if (request.action === 'stopWithdraw') {
+        log('🛑 Received stopWithdraw command!', 'INFO');
+        if (typeof window.stopAutoWithdraw === 'function') {
+            window.stopAutoWithdraw();
+        } else {
+            log('⚠️ window.stopAutoWithdraw not found. Setting flag manually.', 'WARNING');
+            // Fallback
+            if (window.LinkedInBot) window.LinkedInBot.isWithdrawing = false;
+        }
+        sendResponse({ status: 'stopped' });
+    }
 });
 
 // --- PERSISTENCE INIT ---
