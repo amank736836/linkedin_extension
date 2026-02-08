@@ -3,7 +3,13 @@
 window.runPagesAutomation = async function (settings = {}) {
     if (LinkedInBot.isPagesRunning) return;
     LinkedInBot.isPagesRunning = true;
-    LinkedInBot.pagesCount = 0;
+
+    // Load existing count from storage
+    const storageData = await new Promise(resolve => {
+        chrome.storage.local.get(['pagesCount'], resolve);
+    });
+    LinkedInBot.pagesCount = storageData.pagesCount || 0;
+
     const limit = settings.limit || 500;
     const mode = settings.mode || 'follow'; // 'follow' or 'unfollow'
 
@@ -65,6 +71,7 @@ window.runPagesAutomation = async function (settings = {}) {
                 LinkedInBot.pagesCount++;
                 window.StatsManager.increment('pages'); // Centralized stats
                 actionTaken = true;
+                chrome.storage.local.set({ pagesCount: LinkedInBot.pagesCount }); // Persist to storage
                 chrome.runtime.sendMessage({ action: 'updatePagesCount', count: LinkedInBot.pagesCount });
             } else if (mode === 'unfollow') {
                 log(`   ➖ Unfollowing: ${name}`, 'SUCCESS');
@@ -101,7 +108,9 @@ window.runPagesAutomation = async function (settings = {}) {
                 }
 
                 LinkedInBot.pagesCount++;
+                window.StatsManager.increment('pages'); // Centralized stats
                 actionTaken = true;
+                chrome.storage.local.set({ pagesCount: LinkedInBot.pagesCount }); // Persist to storage
                 chrome.runtime.sendMessage({ action: 'updatePagesCount', count: LinkedInBot.pagesCount });
             }
 

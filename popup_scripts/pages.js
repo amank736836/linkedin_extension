@@ -69,9 +69,11 @@ if (startPagesBtn) {
     });
 
     // Init Count from Storage
-    chrome.storage.local.get(['stats'], (data) => {
+    chrome.storage.local.get(['stats', 'pagesCount'], (data) => {
         if (data.stats && data.stats.pages) {
             pagesCountDisplay.innerText = data.stats.pages.daily || 0; // Show daily progress by default
+        } else if (data.pagesCount) {
+            pagesCountDisplay.innerText = data.pagesCount || 0; // Fallback to legacy count
         }
     });
 }

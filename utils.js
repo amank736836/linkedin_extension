@@ -116,34 +116,46 @@ window.StatsManager = {
 
                 let stats = data.stats || JSON.parse(JSON.stringify(this.defaults));
 
+                // Calculate Monday-Sunday week boundaries
+                const getMondayOfWeek = (timestamp) => {
+                    const date = new Date(timestamp);
+                    const day = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+                    const diff = (day === 0 ? -6 : 1 - day); // If Sunday, go back 6 days; otherwise go back to Monday
+                    const monday = new Date(date);
+                    monday.setDate(date.getDate() + diff);
+                    monday.setHours(0, 0, 0, 0); // Start of Monday
+                    return monday.getTime();
+                };
+
+                const currentWeekStart = getMondayOfWeek(now);
+                const previousWeekStart = stats.weekStartDate || 0;
+
                 // Helper to reset daily/weekly if needed
                 const checkReset = (type) => {
                     const last = stats[type].lastReset || 0;
 
-                    // Daily Reset Check (midnight logic or simpler 24h)
-                    // Let's use simple day difference for robustness
-                    const lastDate = new Date(last).getDate();
-                    const nowDate = new Date(now).getDate();
+                    // Daily Reset Check (using date comparison)
+                    const lastDate = new Date(last).toDateString();
+                    const nowDate = new Date(now).toDateString();
 
-                    if (now - last > oneDayMs || lastDate !== nowDate) {
+                    if (lastDate !== nowDate) {
                         stats[type].daily = 0;
                         stats[type].lastReset = now;
                     }
 
-                    // Weekly Reset Check (Global week start)
-                    if (now - stats.weekStartDate > oneWeekMs) {
+                    // Weekly Reset Check (Monday-Sunday boundary)
+                    if (currentWeekStart > previousWeekStart) {
                         stats[type].weekly = 0;
-                        // Only reset start date once per full cycle check, done below
                     }
                 };
 
                 // Check resets for all types
                 ['apply', 'connect', 'catchup', 'pages'].forEach(checkReset);
 
-                // Global Weekly Timer Reset
-                if (now - stats.weekStartDate > oneWeekMs) {
-                    stats.weekStartDate = now;
-                    log('📅 Stats Weekly Cycle Reset!', 'INFO');
+                // Global Weekly Timer Reset (Monday-Sunday boundary)
+                if (currentWeekStart > previousWeekStart) {
+                    stats.weekStartDate = currentWeekStart;
+                    log('📅 Stats Weekly Cycle Reset! (Monday Start)', 'INFO');
                 }
 
                 this.state = stats;
