@@ -19,12 +19,12 @@ chrome.storage.local.get(['connectRunning', 'connectSettings'], (data) => {
     }
 });
 
-// Load and display connect count on popup open
-const connectCountDisplay = document.getElementById('connectCount');
-if (connectCountDisplay) {
+// Load and display connect count on popup open (Renamed to avoid utils.js conflict)
+const connectDisplayLocal = document.getElementById('connectCount');
+if (connectDisplayLocal) {
     chrome.storage.local.get(['connectCount'], (data) => {
         const count = data.connectCount || 0;
-        connectCountDisplay.innerText = count;
+        connectDisplayLocal.innerText = count;
     });
 }
 
@@ -65,18 +65,34 @@ if (startConnectBtn) {
     }
 
     startConnectBtn.addEventListener('click', async () => {
-        // Save delay setting
+        // 1. Get Inputs & Init Managers
         const connectDelayInput = document.getElementById('connectDelay');
+        const weeklyLimitInput = document.getElementById('weeklyLimit');
+        const dailyConnectLimitInput = document.getElementById('dailyConnectLimit');
+        const distStrategyInput = document.getElementById('distStrategy');
+
+        const delayVal = connectDelayInput ? parseInt(connectDelayInput.value, 10) : 10;
+        const weeklyLimit = parseInt(weeklyLimitInput ? weeklyLimitInput.value : 1000, 10) || 1000;
+        const dailyLimit = dailyConnectLimitInput ? parseInt(dailyConnectLimitInput.value, 10) : 1000;
+        const strategy = distStrategyInput ? distStrategyInput.value : 'standard';
+
+        // Save delay setting
         if (connectDelayInput) {
             chrome.storage.local.set({ connectDelay: connectDelayInput.value });
         }
+
+        // Smart Scheduling Calculation
+        if (window.WeeklyManager) await window.WeeklyManager.init();
+        let dailyTarget = window.WeeklyManager ? window.WeeklyManager.getDailyTarget(weeklyLimit, strategy) : dailyLimit;
+
+        // Apply Daily Limit Cap (Crucial for Standard Mode)
+        dailyTarget = Math.min(dailyTarget, dailyLimit);
 
         chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
             if (tabs[0]) {
                 // 1. Check URL & Auto-Redirect
                 if (!tabs[0].url.includes('mynetwork/grow/')) {
                     // Save state BEFORE redirect for auto-resume
-                    const delayVal = delayInput ? parseInt(delayInput.value, 10) : 10;
                     chrome.storage.local.set({
                         connectRunning: true,
                         connectSettings: { delay: delayVal, limit: dailyTarget }
@@ -92,25 +108,13 @@ if (startConnectBtn) {
                     return;
                 }
 
-                // Grab settings
-                const delayVal = connectDelayInput ? parseInt(connectDelayInput.value, 10) : 10;
-                const weeklyLimit = parseInt(weeklyLimitInput.value, 10) || 1000;
-                const dailyLimit = dailyConnectLimitInput ? parseInt(dailyConnectLimitInput.value, 10) : 1000;
-                const strategy = distStrategyInput.value;
-
-                // Smart Scheduling Calculation
-                await window.WeeklyManager.init(); // Refresh state
-                let dailyTarget = window.WeeklyManager.getDailyTarget(weeklyLimit, strategy);
-
-                // Apply Daily Limit Cap (Crucial for Standard Mode)
-                dailyTarget = Math.min(dailyTarget, dailyLimit);
 
                 const logItem = document.createElement('div');
-                logItem.innerText = `[CONNECT] 🚀 Starting! Smart Target: ${dailyTarget} (Weekly Left: ${Math.max(0, weeklyLimit - window.StatsManager.state.connect.weekly)})`;
+                logItem.innerText = `[CONNECT] 🚀 Starting! Smart Target: ${dailyTarget} (Weekly Left: ${Math.max(0, weeklyLimit - (window.StatsManager?.state?.connect?.weekly || 0))})`;
                 logDisplay.appendChild(logItem);
 
                 if (dailyTarget <= 0) {
-                    logItem.innerText = `[CONNECT] ⚠️ Weekly Limit Reached! (Used: ${window.StatsManager.state.connect.weekly}/${weeklyLimit})`;
+                    logItem.innerText = `[CONNECT] ⚠️ Weekly Limit Reached! (Used: ${window.StatsManager?.state?.connect?.weekly}/${weeklyLimit})`;
                     logItem.style.color = 'red';
                     return;
                 }
@@ -138,6 +142,7 @@ if (startConnectBtn) {
                         chrome.tabs.reload(tabs[0].id);
                         return;
                     }
+
 
                     if (response) {
                         startConnectBtn.disabled = true;
