@@ -4,7 +4,7 @@ window.runPagesAutomation = async function (settings = {}) {
     if (LinkedInBot.isPagesRunning) return;
     LinkedInBot.isPagesRunning = true;
     LinkedInBot.pagesCount = 0;
-    const limit = settings.limit || 50;
+    const limit = settings.limit || 500;
     const mode = settings.mode || 'follow'; // 'follow' or 'unfollow'
 
     log(`🏢 Starting Pages Automation (Mode: ${mode.toUpperCase()}, Limit: ${limit})...`, 'INFO');

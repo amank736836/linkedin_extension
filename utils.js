@@ -23,7 +23,9 @@ window.LinkedInBot = {
         experienceLevel: "2",
         workplaceType: "2",
         under10Apps: false,
-        customLibrary: {}
+        customLibrary: {},
+        dailyConnectLimit: 1000,
+        distributionStrategy: 'standard'
     }
 };
 

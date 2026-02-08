@@ -10,8 +10,8 @@ if (startConnectBtn) {
     if (weeklyLimitInput && window.WeeklyManager) {
         window.WeeklyManager.init().then(state => {
             weeklyCountDisplay.innerText = state.weeklyConnectCount;
-            weeklyLimitInput.value = localStorage.getItem('s_weeklyLimit') || 100;
-            distStrategyInput.value = localStorage.getItem('s_distStrategy') || 'even';
+            weeklyLimitInput.value = localStorage.getItem('s_weeklyLimit') || 1000;
+            distStrategyInput.value = localStorage.getItem('s_distStrategy') || 'standard';
             weeklyLimitDisplay.innerText = weeklyLimitInput.value;
         });
 
@@ -22,6 +22,17 @@ if (startConnectBtn) {
 
         distStrategyInput.addEventListener('change', () => {
             localStorage.setItem('s_distStrategy', distStrategyInput.value);
+        });
+    }
+
+    // Initialize Daily Limit
+    const dailyConnectLimitInput = document.getElementById('dailyConnectLimit');
+    if (dailyConnectLimitInput) {
+        // Default to 1000 if not set
+        dailyConnectLimitInput.value = localStorage.getItem('s_dailyConnectLimit') || 1000;
+
+        dailyConnectLimitInput.addEventListener('change', () => {
+            localStorage.setItem('s_dailyConnectLimit', dailyConnectLimitInput.value);
         });
     }
 
@@ -48,12 +59,16 @@ if (startConnectBtn) {
 
                 // Grab settings
                 const delayVal = connectDelayInput ? parseInt(connectDelayInput.value, 10) : 10;
-                const weeklyLimit = parseInt(weeklyLimitInput.value, 10) || 100;
+                const weeklyLimit = parseInt(weeklyLimitInput.value, 10) || 1000;
+                const dailyLimit = dailyConnectLimitInput ? parseInt(dailyConnectLimitInput.value, 10) : 1000;
                 const strategy = distStrategyInput.value;
 
                 // Smart Scheduling Calculation
                 await window.WeeklyManager.init(); // Refresh state
-                const dailyTarget = window.WeeklyManager.getDailyTarget(weeklyLimit, strategy);
+                let dailyTarget = window.WeeklyManager.getDailyTarget(weeklyLimit, strategy);
+
+                // Apply Daily Limit Cap (Crucial for Standard Mode)
+                dailyTarget = Math.min(dailyTarget, dailyLimit);
 
                 const logItem = document.createElement('div');
                 logItem.innerText = `[CONNECT] 🚀 Starting! Smart Target: ${dailyTarget} (Weekly Left: ${Math.max(0, weeklyLimit - window.WeeklyManager.state.weeklyConnectCount)})`;

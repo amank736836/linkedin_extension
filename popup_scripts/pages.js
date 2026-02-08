@@ -33,7 +33,7 @@ if (startPagesBtn) {
 
                 // Explicitly Parse Limit
                 const limitVal = parseInt(pagesLimit.value, 10);
-                const appliedLimit = (isNaN(limitVal) || limitVal < 1) ? 50 : limitVal;
+                const appliedLimit = (isNaN(limitVal) || limitVal < 1) ? 500 : limitVal;
 
                 // LOG IT
                 const logItem = document.createElement('div');

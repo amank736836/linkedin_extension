@@ -18,7 +18,7 @@ if (startCatchUpBtn) {
 
                 // PERSISTENCE: Save state so we can resume if redirected
                 const type = catchUpType.value;
-                const limit = parseInt(document.getElementById('catchUpLimit').value, 10) || 20;
+                const limit = parseInt(document.getElementById('catchUpLimit').value, 10) || 200;
 
                 chrome.storage.local.set({
                     catchUpRunning: true,
