@@ -65,7 +65,7 @@ window.startAutoConnect = async function (settings = {}) {
                 if (showAllBtn) {
                     log(`Expanding section: ${header}`, 'DEBUG');
                     showAllBtn.click();
-                    await sleep(3000); // Wait for modal to open
+                    await randomSleep(3000, 1000); // 2-4 seconds
                 }
             }
         }
@@ -87,7 +87,7 @@ window.startAutoConnect = async function (settings = {}) {
                 const scrollable = modal.querySelector('.artdeco-modal__content') || modal;
                 log('No more buttons in modal. Scrolling modal...', 'DEBUG');
                 scrollable.scrollBy(0, 500);
-                await sleep(2000);
+                await randomSleep(2000, 1000); // 1-3 seconds
 
                 // If we scrolled and still no buttons, maybe we're done with the modal
                 const stillNoButtons = Array.from(container.querySelectorAll('button'))
@@ -96,16 +96,16 @@ window.startAutoConnect = async function (settings = {}) {
                 if (stillNoButtons) {
                     log('Finished with modal. Closing...', 'INFO');
                     modal.querySelector('button[aria-label*="Dismiss"], .artdeco-modal__dismiss')?.click();
-                    await sleep(1000);
+                    await randomSleep(1000, 500); // 0.5-1.5 seconds
                 }
             } else {
                 log('No more connect buttons found. Scrolling page...', 'INFO');
                 window.scrollBy(0, 1000);
-                await sleep(3000);
+                await randomSleep(3000, 1000); // 2-4 seconds
 
                 if (document.body.scrollHeight - window.scrollY < 1500) {
                     log('Reached end of available profile cards. Reloading for fresh leads in 5s...', 'WARNING');
-                    await sleep(5000);
+                    await randomSleep(5000, 2000); // 3-7 seconds
                     window.scrollTo(0, 0);
                     // Save state is handled in the main loop, but ensure we don't lose the flag
                     chrome.storage.local.set({ autoConnectRunning: true });
@@ -139,7 +139,7 @@ window.startAutoConnect = async function (settings = {}) {
             }
 
             btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            await sleep(1000);
+            await randomSleep(1000, 500); // 0.5-1.5 seconds
 
             log(`🤝 Connecting with: ${name || 'Member'}. Waiting ${delay}s...`, 'SUCCESS');
             btn.click();
@@ -147,7 +147,7 @@ window.startAutoConnect = async function (settings = {}) {
             chrome.runtime.sendMessage({ action: 'updateConnectCount', count: LinkedInBot.connectCount });
 
             // Post-click check (catch immediate toasts/modals)
-            await sleep(2000);
+            await randomSleep(2000, 1000); // 1-3 seconds
             const postClickCheck = document.querySelector('.artdeco-modal') || document.querySelector('div[role="alert"]') || document.querySelector('.artdeco-toast');
             if (postClickCheck) {
                 const text = postClickCheck.innerText.toLowerCase();
@@ -159,7 +159,7 @@ window.startAutoConnect = async function (settings = {}) {
             }
 
             // Wait remaining time
-            if (delay > 2) await sleep((delay - 2) * 1000);
+            if (delay > 2) await randomSleep((delay - 2) * 1000, 1000); // Remaining time ±1s
         }
     }
 

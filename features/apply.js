@@ -54,7 +54,7 @@ const dismissAndSave = async () => {
     const dismissBtn = document.querySelector('button[aria-label*="Dismiss"]');
     if (dismissBtn) {
         dismissBtn.click();
-        await sleep(1000);
+        await randomSleep(1000);
     }
 
     // Check for "Save" modal (Retry a few times)
@@ -67,11 +67,11 @@ const dismissAndSave = async () => {
             if (saveBtn) {
                 log('   💾 "Save" modal found. Clicking Save...', 'SUCCESS');
                 saveBtn.click();
-                await sleep(1000);
+                await randomSleep(1000);
                 return;
             }
         }
-        await sleep(500);
+        await randomSleep(500);
     }
 };
 
@@ -100,19 +100,19 @@ window.startAutomation = async function (settings) {
         for (let i = 0; i < cards.length && LinkedInBot.applicationCount < targetCount && LinkedInBot.isRunning; i++) {
             log(`Processing job ${i + 1}/${cards.length} (Total: ${LinkedInBot.applicationCount}/${targetCount})`, 'INFO');
             cards[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
-            await sleep(2000);
+            await randomSleep(2000);
 
             const link = cards[i].querySelector('a.job-card-list__title--link');
             if (link) {
                 const jobUrl = link.href;
                 link.click();
-                await sleep(3000);
+                await randomSleep(3000);
 
                 const applyBtn = document.querySelector('button.jobs-apply-button');
                 if (applyBtn && !applyBtn.innerText.includes('Applied')) {
                     log('Clicking Easy Apply...', 'INFO');
                     applyBtn.click();
-                    await sleep(2000);
+                    await randomSleep(2000);
 
                     let formHandlingAttempts = 0;
                     let success = false;
@@ -126,7 +126,7 @@ window.startAutomation = async function (settings) {
                             LinkedInBot.applicationCount++;
                             log(`✓ Applied! Waiting 45s...`, 'SUCCESS');
                             chrome.runtime.sendMessage({ action: 'updateCount', count: LinkedInBot.applicationCount });
-                            await sleep(45000);
+                            await randomSleep(45000);
                             // Dismiss and Handle "Save" Modal
                             await dismissAndSave();
                             success = true;
@@ -136,7 +136,7 @@ window.startAutomation = async function (settings) {
                             if (next) {
                                 log('Moving to next step...', 'INFO');
                                 next.click();
-                                await sleep(2000);
+                                await randomSleep(2000);
                                 formHandlingAttempts++;
                             } else {
                                 log('⚠️ Form stalled or unknown question detected.', 'WARNING');
@@ -179,7 +179,7 @@ window.startAutomation = async function (settings) {
             if (nextLink && !nextLink.disabled) {
                 log('Moving to next page...', 'INFO');
                 nextLink.click();
-                await sleep(5000); // Wait for page load
+                await randomSleep(5000); // Wait for page load
             } else {
                 log('No more pages found.', 'WARNING');
                 break;

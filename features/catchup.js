@@ -39,7 +39,7 @@ window.startAutoCatchUp = async function (settings = {}) {
         if (cards.length === 0) {
             log('No cards found. Scrolling down...', 'INFO');
             window.scrollBy(0, 800);
-            await sleep(3000);
+            await randomSleep(3000);
             scrollAttempts++;
             continue;
         }
@@ -96,11 +96,11 @@ window.startAutoCatchUp = async function (settings = {}) {
             if (likeBtn && !isLiked) {
                 log(`   👍 Clicking Like for ${name}...`, 'INFO');
                 likeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                await sleep(500);
+                await randomSleep(500);
 
                 // STEP 1: Click the trigger to open the menu
                 likeBtn.click();
-                await sleep(800);
+                await randomSleep(800);
 
                 // STEP 2: Find the specific "Like" reaction button (Tray Logic)
                 const reactionTray = document.querySelector('.artdeco-hoverable-content__content, .reactions-menu');
@@ -112,7 +112,7 @@ window.startAutoCatchUp = async function (settings = {}) {
 
                 if (reactionOption) {
                     reactionOption.click();
-                    await sleep(1000);
+                    await randomSleep(1000);
                 } else {
                     const allLikeOptions = Array.from(document.querySelectorAll('button[aria-label="Like"]'));
                     const visibleOption = allLikeOptions.find(b => b.offsetParent !== null && b !== likeBtn);
@@ -122,7 +122,7 @@ window.startAutoCatchUp = async function (settings = {}) {
                         log('      Could not find reaction option. Assuming standard click worked.', 'WARNING');
                     }
                 }
-                await sleep(1500);
+                await randomSleep(1500);
                 actionTakenOnPage = true;
             }
 
@@ -165,19 +165,19 @@ window.startAutoCatchUp = async function (settings = {}) {
 
                 if (messageTriggerBtn) {
                     messageTriggerBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    await sleep(1000);
+                    await randomSleep(1000);
                     messageTriggerBtn.click();
                 } else {
                     log('   ⚠️ No Message Button found. Clicking Link (May navigate)...', 'WARNING');
                     messageLink.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    await sleep(1000);
+                    await randomSleep(1000);
 
                     // If it's a messaging/compose link, it often navigates. 
                     // Let's try to click it and let content.js handle recovery if it navigates.
                     messageLink.click();
                 }
 
-                await sleep(3500);
+                await randomSleep(3500);
                 actionTakenOnPage = true;
 
                 // Helper to find the SEND button
@@ -203,12 +203,12 @@ window.startAutoCatchUp = async function (settings = {}) {
                 };
 
                 let sendBtn = null;
-                for (let k = 0; k < 10; k++) { sendBtn = findSendButton(); if (sendBtn) break; await sleep(500); }
+                for (let k = 0; k < 10; k++) { sendBtn = findSendButton(); if (sendBtn) break; await randomSleep(500); }
 
                 if (sendBtn) {
                     for (let k = 0; k < 6; k++) {
                         if (!sendBtn.disabled) break;
-                        await sleep(500);
+                        await randomSleep(500);
                     }
 
                     if (sendBtn.disabled) {
@@ -226,7 +226,7 @@ window.startAutoCatchUp = async function (settings = {}) {
                             ['input', 'change', 'keydown', 'keyup'].forEach(eventType => {
                                 textarea.dispatchEvent(new Event(eventType, { bubbles: true }));
                             });
-                            await sleep(500);
+                            await randomSleep(500);
                         }
                     }
 
@@ -256,12 +256,12 @@ window.startAutoCatchUp = async function (settings = {}) {
                     for (let v = 0; v < 10; v++) {
                         const c = (messageLink) ? messageLink.closest('.artdeco-card, li') : null;
                         if (c && c.innerText.includes('Message sent')) { log('   ✅ Verified.', 'SUCCESS'); break; }
-                        await sleep(500);
+                        await randomSleep(500);
                     }
                 } else {
                     log('   ❌ Send button disabled.', 'ERROR');
                 }
-                await sleep(1500);
+                await randomSleep(1500);
                 const closeBtn = document.querySelector('button[aria-label*="Dismiss"], .msg-overlay-bubble-header__control--close-btn');
                 if (closeBtn) closeBtn.click();
             } else {
@@ -269,7 +269,7 @@ window.startAutoCatchUp = async function (settings = {}) {
                 if (closeBtn) closeBtn.click();
             }
 
-            await sleep(1000); // Post-action delay
+            await randomSleep(1000); // Post-action delay
         }
 
         // --- SCROLL STRATEGY ---
@@ -281,19 +281,19 @@ window.startAutoCatchUp = async function (settings = {}) {
 
             log('   Usage: Scrolling "workspace" container...', 'DEBUG');
             workspace.scrollTop = workspace.scrollHeight;
-            await sleep(2000);
+            await randomSleep(2000);
             workspace.scrollTop += 1000;
-            await sleep(1000);
+            await randomSleep(1000);
 
             const showMoreBtn = document.querySelector('button.scaffold-finite-scroll__load-button');
             if (showMoreBtn) {
                 log('Found "Show more results" button. Clicking...', 'INFO');
                 showMoreBtn.click();
-                await sleep(3000);
+                await randomSleep(3000);
             }
 
             const currentTop = workspace.scrollTop;
-            await sleep(3000);
+            await randomSleep(3000);
 
             if (actionTakenOnPage) {
                 scrollAttempts = 0;
@@ -301,13 +301,13 @@ window.startAutoCatchUp = async function (settings = {}) {
                 if (Math.abs(currentTop - previousTop) < 10) {
                     log('⚠️ Workspace scroll stuck. Forcing...', 'WARNING');
                     workspace.scrollTop += 5000;
-                    await sleep(2000);
+                    await randomSleep(2000);
                 }
                 scrollAttempts++;
             }
         } else {
             window.scrollTo({ top: document.body.scrollHeight + 1000, behavior: 'smooth' });
-            await sleep(3000);
+            await randomSleep(3000);
             scrollAttempts++;
         }
     }

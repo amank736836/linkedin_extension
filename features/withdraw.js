@@ -16,7 +16,7 @@ window.startAutoWithdraw = async function () {
         return;
     }
 
-    await sleep(3000);
+    await randomSleep(3000, 1000); // 2-4 seconds
 
     // Load existing count from storage
     let withdrawCount = 0;
@@ -119,7 +119,7 @@ window.startAutoWithdraw = async function () {
                     // Wait loop for modal (up to 3s)
                     let modal = null;
                     for (let i = 0; i < 6; i++) {
-                        await sleep(500);
+                        await randomSleep(500, 200); // 300-700ms
                         // LinkedIn's modal has id="dialog-header", not role="dialog"
                         modal = document.querySelector('.artdeco-modal') ||
                             document.getElementById('dialog-header')?.parentElement ||
@@ -145,7 +145,7 @@ window.startAutoWithdraw = async function () {
                     if (confirmBtn) {
                         log('   ✅ Clicking Confirm Button...', 'INFO');
                         confirmBtn.click(); // Simple click like Auto-Connect
-                        await sleep(3000); // Wait for modal to close
+                        await randomSleep(3000, 1000); // 2-4 seconds // Wait for modal to close
                         withdrawCount++;
                         cycleWithdrawals++;
 
@@ -216,7 +216,7 @@ window.startAutoWithdraw = async function () {
         }
 
         // Check for "Load more" button and click it
-        await sleep(1000); // Wait for scroll to complete
+        await randomSleep(2000, 1000); // 1-3 seconds (human-like variation)
         const loadMoreBtn = Array.from(document.querySelectorAll('button')).find(btn =>
             btn.innerText.trim().toLowerCase() === 'load more'
         );
@@ -224,7 +224,7 @@ window.startAutoWithdraw = async function () {
         if (loadMoreBtn && loadMoreBtn.offsetParent !== null) {
             log('   📥 Clicking "Load more" button...', 'INFO');
             loadMoreBtn.click();
-            await sleep(2000); // Wait for new content to load
+            await randomSleep(2000, 1000); // 1-3 seconds
         }
 
         // Measure height AFTER scroll + Load more
@@ -246,7 +246,7 @@ window.startAutoWithdraw = async function () {
         if (showMoreBtn) {
             log('Found "Show more results" button. Clicking...', 'INFO');
             showMoreBtn.click();
-            await sleep(3000);
+            await randomSleep(3000, 1000); // 2-4 seconds
         } else {
             // If we didn't find one, check if we are truly at the end (maybe via a footer or logic).
             // For now, let's keep scrolling until MAX_SCROLLS to be safe, as infinite scroll might just need scrolling.

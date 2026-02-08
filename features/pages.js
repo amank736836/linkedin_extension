@@ -41,7 +41,7 @@ window.runPagesAutomation = async function (settings = {}) {
         if (actionableButtons.length === 0) {
             log('No buttons found. Scrolling...', 'INFO');
             window.scrollBy(0, 800);
-            await sleep(2000);
+            await randomSleep(2000);
             scrollAttempts++;
             continue;
         }
@@ -57,7 +57,7 @@ window.runPagesAutomation = async function (settings = {}) {
 
             // Scroll into view
             targetBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            await sleep(1000);
+            await randomSleep(1000);
 
             if (mode === 'follow') {
                 log(`   ➕ Following: ${name}`, 'SUCCESS');
@@ -68,7 +68,7 @@ window.runPagesAutomation = async function (settings = {}) {
             } else if (mode === 'unfollow') {
                 log(`   ➖ Unfollowing: ${name}`, 'SUCCESS');
                 targetBtn.click();
-                await sleep(1500); // Wait for modal to appear
+                await randomSleep(1500); // Wait for modal to appear
 
                 // Confirm Unfollow Modal
                 const modal = document.querySelector('.artdeco-modal');
@@ -88,7 +88,7 @@ window.runPagesAutomation = async function (settings = {}) {
                     if (confirmBtn) {
                         log('   ✅ Confirm button found. Clicking...', 'SUCCESS');
                         confirmBtn.click();
-                        await sleep(1500); // Wait for action to complete
+                        await randomSleep(1500); // Wait for action to complete
                     } else {
                         log('   ⚠️ Could not find "Unfollow" confirm button in modal.', 'WARNING');
                         // Attempt to dismiss to avoid getting stuck
@@ -108,20 +108,20 @@ window.runPagesAutomation = async function (settings = {}) {
             // SAFETY: Increased delay to prevent rate limiting (5-10 seconds)
             const delay = 5000 + Math.random() * 5000;
             log(`   ⏳ Waiting ${Math.round(delay / 1000)}s...`, 'DEBUG');
-            await sleep(delay);
+            await randomSleep(delay);
         }
 
         // 3. Scroll & Pagination
         if (!actionTaken) {
             log('No actionable buttons visible. Scrolling...', 'INFO');
             window.scrollBy(0, 800);
-            await sleep(3000);
+            await randomSleep(3000);
 
             // "Show more" or "Next"
             const nextBtn = document.querySelector('button.artdeco-button--secondary, button[aria-label="Next"]');
             if (nextBtn && nextBtn.innerText.toLowerCase().includes('show more')) {
                 nextBtn.click();
-                await sleep(3000);
+                await randomSleep(3000);
             }
             scrollAttempts++;
         } else {

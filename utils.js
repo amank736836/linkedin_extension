@@ -43,6 +43,12 @@ window.log = (message, type = 'INFO') => {
 
 window.sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Randomized sleep for human-like behavior (base ± variance)
+window.randomSleep = (baseMs, varianceMs = 1000) => {
+    const randomDelay = baseMs + (Math.random() * varianceMs * 2) - varianceMs;
+    return new Promise(resolve => setTimeout(resolve, Math.max(500, randomDelay)));
+};
+
 window.handleSecurityCheckpoint = async () => {
     // Check for "I'm not a robot" or "Verify" screens
     if (document.body.innerText.includes('security check') ||
@@ -65,7 +71,7 @@ window.handleSecurityCheckpoint = async () => {
         log('🛑 Security checkpoint detected! Stopping all automation for safety.', 'ERROR');
         */
 
-        await sleep(2000);
+        await randomSleep(2000, 1000); // 1-3 seconds
     }
 };
 
