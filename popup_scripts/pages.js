@@ -1,23 +1,7 @@
 // --- POPUP FEATURE: PAGES AUTOMATION ---
 
-// AUTO-RESUME: Check if we should resume after redirect
-chrome.storage.local.get(['pagesRunning', 'pagesSettings'], (data) => {
-    if (data.pagesRunning && data.pagesSettings) {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && (tabs[0].url.includes('/mynetwork/network-manager/company') || tabs[0].url.includes('/search/results'))) {
-                const logItem = document.createElement('div');
-                logItem.style.color = '#00d084';
-                logItem.innerText = "[PAGES] 🔄 Auto-Resuming from previous session! Starting in 5s...";
-                if (logDisplay) logDisplay.appendChild(logItem);
-
-                // Auto-resume after 5s delay (allow page to stabilize)
-                setTimeout(() => {
-                    if (startPagesBtn) startPagesBtn.click();
-                }, 5000);
-            }
-        });
-    }
-});
+// AUTO-RESUME: Now handled by content.js persistence detection
+// (Removed duplicate logic to prevent conflicts)
 
 if (startPagesBtn) {
     startPagesBtn.addEventListener('click', () => {
@@ -25,27 +9,30 @@ if (startPagesBtn) {
             if (tabs[0]) {
                 const currentUrl = tabs[0].url;
 
-                // Flexible URL check for both Search and Network Manager
-                const isPagesUrl = currentUrl.includes('/search/results/') ||
-                    currentUrl.includes('/mynetwork/network-manager/company/');
+                // Get current mode
+                const selectedMode = pagesMode.value;
 
-                if (!isPagesUrl) {
+                // Check if we're on the CORRECT page for the selected mode
+                const isCorrectPage =
+                    (selectedMode === 'unfollow' && currentUrl.includes('/mynetwork/network-manager/company/')) ||
+                    (selectedMode === 'follow' && currentUrl.includes('/search/results/companies/'));
+
+                if (!isCorrectPage) {
                     // Save state BEFORE redirect for auto-resume
-                    const mode = pagesMode.value;
                     const limitVal = parseInt(document.getElementById('pagesLimit').value, 10) || 500;
                     chrome.storage.local.set({
                         pagesRunning: true,
-                        pagesSettings: { mode, limit: limitVal }
+                        pagesSettings: { mode: selectedMode, limit: limitVal }
                     });
 
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800';
-                    logItem.innerText = `[PAGES] Redirecting to ${pagesMode.value === 'unfollow' ? 'Following' : 'Search'}... Will auto-resume in 5s!`;
+                    logItem.innerText = `[PAGES] Redirecting to ${selectedMode === 'unfollow' ? 'Following' : 'Search'}... Will auto-resume in 5s!`;
                     logDisplay.appendChild(logItem);
                     logDisplay.scrollTop = logDisplay.scrollHeight;
 
                     // Determine Target URL
-                    const targetUrl = pagesMode.value === 'unfollow'
+                    const targetUrl = selectedMode === 'unfollow'
                         ? 'https://www.linkedin.com/mynetwork/network-manager/company/'
                         : 'https://www.linkedin.com/search/results/companies/';
 
@@ -71,14 +58,18 @@ if (startPagesBtn) {
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'startPages', settings }, (response) => {
                     if (chrome.runtime.lastError) {
                         const logItem = document.createElement('div');
-                        logItem.style.color = '#ff0000';
-                        logItem.innerText = "[PAGES] Connection Failed. Reloading... Auto-start in 10s... ⏳";
+                        logItem.style.color = '#ff9800';
+                        logItem.innerText = "[PAGES] Connection lost. Reloading page... Auto-resume in 5s ⏳";
                         logDisplay.appendChild(logItem);
 
-                        chrome.tabs.reload(tabs[0].id);
-                        setTimeout(() => {
-                            startPagesBtn.click();
-                        }, 10000);
+                        // Save persistence state for auto-resume
+                        chrome.storage.local.set({
+                            pagesRunning: true,
+                            pagesSettings: settings
+                        }, () => {
+                            // Reload the page - content.js will auto-resume
+                            chrome.tabs.reload(tabs[0].id);
+                        });
                         return;
                     }
                     if (response) {

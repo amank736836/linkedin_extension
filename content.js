@@ -243,6 +243,9 @@ chrome.storage.local.get(['pagesRunning', 'pagesSettings'], (data) => {
             LinkedInBot.isCatchingUp = false;
             LinkedInBot.isRunning = false;
 
+            // Clear the persistence flag to prevent duplicate triggers
+            chrome.storage.local.set({ pagesRunning: false });
+
             setTimeout(() => {
                 runPagesAutomation(data.pagesSettings || {});
             }, 5000);
