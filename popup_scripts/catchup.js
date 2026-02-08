@@ -48,6 +48,14 @@ if (startCatchUpBtn) {
             }
         });
     });
+
+    // Init Count from Storage
+    chrome.storage.local.get(['stats'], (data) => {
+        const catchUpCount = document.getElementById('catchUpCount');
+        if (data.stats && data.stats.catchup && catchUpCount) {
+            catchUpCount.innerText = data.stats.catchup.daily || 0;
+        }
+    });
 }
 
 if (stopCatchUpBtn) {

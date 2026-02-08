@@ -63,6 +63,7 @@ window.runPagesAutomation = async function (settings = {}) {
                 log(`   ➕ Following: ${name}`, 'SUCCESS');
                 targetBtn.click();
                 LinkedInBot.pagesCount++;
+                window.StatsManager.increment('pages'); // Centralized stats
                 actionTaken = true;
                 chrome.runtime.sendMessage({ action: 'updatePagesCount', count: LinkedInBot.pagesCount });
             } else if (mode === 'unfollow') {

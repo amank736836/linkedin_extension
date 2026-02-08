@@ -144,6 +144,7 @@ window.startAutoConnect = async function (settings = {}) {
             log(`🤝 Connecting with: ${name || 'Member'}. Waiting ${delay}s...`, 'SUCCESS');
             btn.click();
             LinkedInBot.connectCount++;
+            window.StatsManager.increment('connect'); // Use centralized stats
             chrome.runtime.sendMessage({ action: 'updateConnectCount', count: LinkedInBot.connectCount });
 
             // Post-click check (catch immediate toasts/modals)

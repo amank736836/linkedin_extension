@@ -124,6 +124,7 @@ window.startAutomation = async function (settings) {
                         if (submit) {
                             submit.click();
                             LinkedInBot.applicationCount++;
+                            window.StatsManager.increment('apply'); // Centralized stats
                             log(`✓ Applied! Waiting 45s...`, 'SUCCESS');
                             chrome.runtime.sendMessage({ action: 'updateCount', count: LinkedInBot.applicationCount });
                             await randomSleep(45000);

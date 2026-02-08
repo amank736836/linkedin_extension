@@ -94,88 +94,126 @@ window.getSmartLimit = (target, variance) => {
     return smartTarget;
 };
 
-// WEEKLY MANAGER (Smart Scheduling)
-window.WeeklyManager = {
-    // defaults
-    state: {
-        weeklyConnectCount: 0,
-        weekStartDate: Date.now(),
-        lastResetDate: Date.now()
+// STATS MANAGER (Comprehensive Analytics)
+window.StatsManager = {
+    // Default state structure
+    defaults: {
+        apply: { total: 0, weekly: 0, daily: 0, lastReset: Date.now() },
+        connect: { total: 0, weekly: 0, daily: 0, lastReset: Date.now() },
+        catchup: { total: 0, weekly: 0, daily: 0, lastReset: Date.now() },
+        pages: { total: 0, weekly: 0, daily: 0, lastReset: Date.now() },
+        weekStartDate: Date.now()
     },
+
+    state: null,
 
     init: async function () {
         return new Promise((resolve) => {
-            chrome.storage.local.get(['weeklyConnectCount', 'weekStartDate'], (data) => {
+            chrome.storage.local.get(['stats'], (data) => {
                 const now = Date.now();
-                const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+                const oneDayMs = 24 * 60 * 60 * 1000;
+                const oneWeekMs = 7 * oneDayMs;
 
-                // Initialize or Load
-                if (!data.weekStartDate || (now - data.weekStartDate > oneWeekMs)) {
-                    // Reset if > 7 days or first run
-                    this.state.weekStartDate = now;
-                    this.state.weeklyConnectCount = 0;
-                    chrome.storage.local.set(this.state);
-                    log('📅 Weekly Cycle Reset! Starting fresh week.', 'INFO');
-                } else {
-                    this.state.weekStartDate = data.weekStartDate;
-                    this.state.weeklyConnectCount = data.weeklyConnectCount || 0;
+                let stats = data.stats || JSON.parse(JSON.stringify(this.defaults));
+
+                // Helper to reset daily/weekly if needed
+                const checkReset = (type) => {
+                    const last = stats[type].lastReset || 0;
+
+                    // Daily Reset Check (midnight logic or simpler 24h)
+                    // Let's use simple day difference for robustness
+                    const lastDate = new Date(last).getDate();
+                    const nowDate = new Date(now).getDate();
+
+                    if (now - last > oneDayMs || lastDate !== nowDate) {
+                        stats[type].daily = 0;
+                        stats[type].lastReset = now;
+                    }
+
+                    // Weekly Reset Check (Global week start)
+                    if (now - stats.weekStartDate > oneWeekMs) {
+                        stats[type].weekly = 0;
+                        // Only reset start date once per full cycle check, done below
+                    }
+                };
+
+                // Check resets for all types
+                ['apply', 'connect', 'catchup', 'pages'].forEach(checkReset);
+
+                // Global Weekly Timer Reset
+                if (now - stats.weekStartDate > oneWeekMs) {
+                    stats.weekStartDate = now;
+                    log('📅 Stats Weekly Cycle Reset!', 'INFO');
                 }
+
+                this.state = stats;
+                chrome.storage.local.set({ stats: this.state });
                 resolve(this.state);
             });
         });
     },
 
-    incrementCount: function () {
-        this.state.weeklyConnectCount++;
-        chrome.storage.local.set({ weeklyConnectCount: this.state.weeklyConnectCount });
+    increment: function (type) {
+        if (!this.state) return; // Should run init first
+
+        // Ensure type exists
+        if (!this.state[type]) this.state[type] = { total: 0, weekly: 0, daily: 0, lastReset: Date.now() };
+
+        this.state[type].total++;
+        this.state[type].weekly++;
+        this.state[type].daily++;
+
+        chrome.storage.local.set({ stats: this.state });
+
+        // Broadcast update for UI
+        try {
+            chrome.runtime.sendMessage({ action: 'statsUpdated', stats: this.state });
+        } catch (e) { }
     },
 
+    getStats: function () {
+        return this.state;
+    }
+};
+
+// --- LEGACY WeeklyManager (Kept for backward compatibility if needed, but StatsManager supersedes) ---
+// We can now alias or deprecate it, but let's keep it simple and just use StatsManager moving forward.
+// The WeeklyManager.increment is handled by StatsManager.increment('connect') now.
+window.WeeklyManager = {
+    init: async function () { await window.StatsManager.init(); return window.StatsManager.state.connect; }, // Adapt return to expected? No, refactor consumers.
     getDailyTarget: function (weeklyLimit, strategy) {
+        // Use StatsManager data
+        if (!window.StatsManager.state) return 0;
+
+        const state = window.StatsManager.state;
         const now = Date.now();
         const oneDayMs = 24 * 60 * 60 * 1000;
-        const daysElapsed = Math.floor((now - this.state.weekStartDate) / oneDayMs);
+        const daysElapsed = Math.floor((now - state.weekStartDate) / oneDayMs);
         const daysRemaining = Math.max(1, 7 - daysElapsed);
-        const budgetLeft = Math.max(0, weeklyLimit - this.state.weeklyConnectCount);
+        const budgetLeft = Math.max(0, weeklyLimit - state.connect.weekly);
 
-        log(`📅 Weekly Status: ${this.state.weeklyConnectCount}/${weeklyLimit} used. Days Left: ${daysRemaining}.`, 'INFO');
+        log(`📅 Weekly Status: ${state.connect.weekly}/${weeklyLimit} used. Days Left: ${daysRemaining}.`, 'INFO');
 
         if (budgetLeft <= 0) return 0;
 
         let dailyTarget = 0;
-
         switch (strategy) {
             case 'front_load':
-                // Send more earlier in the week (e.g., 1.5x average)
-                // If it's early (day 0-2), be aggressive. Late (day 5-6), tapering.
-                if (daysElapsed < 3) {
-                    dailyTarget = Math.ceil((budgetLeft / daysRemaining) * 1.5);
-                } else {
-                    dailyTarget = Math.ceil(budgetLeft / daysRemaining);
-                }
+                if (daysElapsed < 3) dailyTarget = Math.ceil((budgetLeft / daysRemaining) * 1.5);
+                else dailyTarget = Math.ceil(budgetLeft / daysRemaining);
                 break;
-
             case 'even':
-                // Evenly distribute remaining
-                dailyTarget = Math.ceil(budgetLeft / daysRemaining);
-                break;
-
             case 'standard':
             default:
-                // Just use the budget left, but capped reasonably to avoid 100 in one day?
-                // Actually, 'standard' usually implies user sets a fixed daily limit elsewhere.
-                // But here we return what the manager THINKS the target should be.
-                // If standard, we might just return the whole budget as "available" 
-                // and let the daily limit cap it.
-                dailyTarget = budgetLeft;
+                dailyTarget = Math.ceil(budgetLeft / daysRemaining); // Even split usually safer for standard calculation base
+                if (strategy === 'standard') dailyTarget = budgetLeft; // Standard = allow full access up to daily cap
                 break;
         }
 
-        // Add small variance to look human (except if budget is very tight)
+        // Add variance
         if (dailyTarget > 5) {
-            const variance = Math.floor(Math.random() * 5) - 2; // +/- 2
-            dailyTarget += variance;
+            dailyTarget += (Math.floor(Math.random() * 5) - 2);
         }
-
         return Math.max(0, dailyTarget);
     }
 };

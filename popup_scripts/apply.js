@@ -52,6 +52,16 @@ if (startBtn) {
             }
         });
     });
+
+
+    // Init Count from Storage
+    chrome.storage.local.get(['stats'], (data) => {
+        const countDisplay = document.getElementById('count');
+        if (data.stats && data.stats.apply && countDisplay) {
+            countDisplay.innerText = data.stats.apply.daily || 0;
+        }
+    });
+
 }
 
 if (stopBtn) {

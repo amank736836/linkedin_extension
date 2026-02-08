@@ -143,6 +143,16 @@ if (withdrawBtn) {
         }
     });
 
+
+
+    // Init Count from Storage
+    chrome.storage.local.get(['stats'], (data) => {
+        const connectCount = document.getElementById('connectCount');
+        if (data.stats && data.stats.connect && connectCount) {
+            connectCount.innerText = data.stats.connect.daily || 0;
+        }
+    });
+
     withdrawBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {

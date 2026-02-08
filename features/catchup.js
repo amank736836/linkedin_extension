@@ -239,6 +239,7 @@ window.startAutoCatchUp = async function (settings = {}) {
                     } catch (e) { log('   ❌ Click error: ' + e.message, 'ERROR'); }
 
                     LinkedInBot.catchUpCount++;
+                    window.StatsManager.increment('catchup'); // Centralized stats
                     chrome.storage.local.set({ catchUpCount: LinkedInBot.catchUpCount });
                     chrome.runtime.sendMessage({ action: 'updateCatchUpCount', count: LinkedInBot.catchUpCount });
 

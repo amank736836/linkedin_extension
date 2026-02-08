@@ -104,3 +104,47 @@ if (saveBtnProfile) {
         saveSettings();
     });
 }
+
+// Analytics Polling
+setInterval(updateAnalyticsUI, 2000);
+updateAnalyticsUI(); // Initial
+
+function updateAnalyticsUI() {
+    chrome.storage.local.get(['stats'], (data) => {
+        if (!data.stats) return;
+        const s = data.stats;
+
+        // Helper
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val;
+        };
+
+        // Apply
+        if (s.apply) {
+            set('stats_apply_daily', s.apply.daily || 0);
+            set('stats_apply_weekly', s.apply.weekly || 0);
+            set('stats_apply_total', s.apply.total || 0);
+        }
+
+        // Connect
+        if (s.connect) {
+            set('stats_connect_daily', s.connect.daily || 0);
+            set('stats_connect_weekly', s.connect.weekly || 0);
+            set('stats_connect_total', s.connect.total || 0);
+        }
+
+        // CatchUp
+        if (s.catchup) {
+            set('stats_catchup_daily', s.catchup.daily || 0);
+            set('stats_catchup_weekly', s.catchup.weekly || 0);
+            set('stats_catchup_total', s.catchup.total || 0);
+        }
+
+        // Pages
+        if (s.pages) {
+            set('stats_pages_daily', s.pages.daily || 0);
+            set('stats_pages_weekly', s.pages.weekly || 0);
+        }
+    });
+}
