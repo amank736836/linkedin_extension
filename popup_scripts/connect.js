@@ -19,6 +19,15 @@ chrome.storage.local.get(['connectRunning', 'connectSettings'], (data) => {
     }
 });
 
+// Load and display connect count on popup open
+const connectCountDisplay = document.getElementById('connectCount');
+if (connectCountDisplay) {
+    chrome.storage.local.get(['connectCount'], (data) => {
+        const count = data.connectCount || 0;
+        connectCountDisplay.innerText = count;
+    });
+}
+
 if (startConnectBtn) {
     // Initialize Weekly Manager UI
     const weeklyLimitInput = document.getElementById('weeklyLimit');
@@ -179,15 +188,6 @@ if (withdrawBtn) {
         }
     });
 
-
-
-    // Init Count from Storage
-    chrome.storage.local.get(['stats'], (data) => {
-        const connectCount = document.getElementById('connectCount');
-        if (data.stats && data.stats.connect && connectCount) {
-            connectCount.innerText = data.stats.connect.daily || 0;
-        }
-    });
 
     withdrawBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

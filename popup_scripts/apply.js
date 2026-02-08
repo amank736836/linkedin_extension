@@ -19,6 +19,14 @@ chrome.storage.local.get(['applyRunning', 'applySettings'], (data) => {
     }
 });
 
+// Load and display apply count on popup open
+chrome.storage.local.get(['applyCount'], (data) => {
+    const applyCountDisplay = document.getElementById('count');
+    if (applyCountDisplay) {
+        applyCountDisplay.innerText = data.applyCount || 0;
+    }
+});
+
 if (startBtn) {
     startBtn.addEventListener('click', () => {
         const settings = {};

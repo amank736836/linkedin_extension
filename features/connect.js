@@ -106,9 +106,10 @@ window.startAutoConnect = async function (settings = {}) {
                 // Check if we reached the end
                 if (document.body.scrollHeight - window.scrollY < 1500) {
                     // FIRST: Try clicking "Load more" button if available
-                    const loadMoreBtn = document.querySelector('button[aria-label*="Load more"]') ||
-                        document.querySelector('button:has-text("Load more")') ||
-                        Array.from(document.querySelectorAll('button')).find(b => b.innerText.trim().toLowerCase() === 'load more');
+                    const loadMoreBtn = Array.from(document.querySelectorAll('button')).find(b =>
+                        b.innerText.trim().toLowerCase().includes('load') &&
+                        b.innerText.trim().toLowerCase().includes('more')
+                    );
 
                     if (loadMoreBtn && loadMoreBtn.offsetParent !== null) {
                         log('📄 Clicking "Load more" button to fetch more profiles...', 'INFO');

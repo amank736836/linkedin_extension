@@ -1,5 +1,13 @@
 // --- POPUP FEATURE: CATCH-UP ---
 
+// Load and display catchup count on popup open
+chrome.storage.local.get(['stats'], (data) => {
+    const catchUpCountDisplay = document.getElementById('catchUpCount');
+    if (catchUpCountDisplay && data.stats && data.stats.catchup) {
+        catchUpCountDisplay.innerText = data.stats.catchup.daily || 0;
+    }
+});
+
 if (startCatchUpBtn) {
     startCatchUpBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
