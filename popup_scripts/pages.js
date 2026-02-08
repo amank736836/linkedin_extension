@@ -5,6 +5,9 @@
 
 if (startPagesBtn) {
     startPagesBtn.addEventListener('click', () => {
+        // MUTUAL EXCLUSION
+        if (window.clearAllStates) window.clearAllStates();
+
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
                 const currentUrl = tabs[0].url;

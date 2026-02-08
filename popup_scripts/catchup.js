@@ -10,6 +10,9 @@ chrome.storage.local.get(['stats'], (data) => {
 
 if (startCatchUpBtn) {
     startCatchUpBtn.addEventListener('click', () => {
+        // MUTUAL EXCLUSION
+        if (window.clearAllStates) window.clearAllStates();
+
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
                 // 1. Check URL and Redirect if needed

@@ -137,3 +137,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
     }
 });
+
+// MUTUAL EXCLUSION HELPER
+function clearAllStates(exclude = null) {
+    const states = {
+        isRunning: false,          // Apply
+        connectRunning: false,     // Connect
+        autoConnectRunning: false, // Connect (Legacy)
+        catchUpRunning: false,     // CatchUp
+        pagesRunning: false,       // Pages
+        withdrawRunning: false     // Withdraw
+    };
+
+
+    // Explicitly set excluded state to true if requested (though usually handled by caller)
+    // But caller usually does: clearAllStates(); customStart();
+
+    chrome.storage.local.set(states, () => {
+        // Optional: Log clearing
+        console.log('Cleared all automation states.');
+    });
+}
+// Export to window
+window.clearAllStates = clearAllStates;

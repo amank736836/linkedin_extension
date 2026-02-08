@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         withdrawBtn.addEventListener('click', () => {
+            // MUTUAL EXCLUSION
+            if (window.clearAllStates) window.clearAllStates();
+
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 if (tabs[0]) {
                     // Check if on correct page (/sent/ or /invitation-manager/sent/)

@@ -88,6 +88,9 @@ if (startConnectBtn) {
         // Apply Daily Limit Cap (Crucial for Standard Mode)
         dailyTarget = Math.min(dailyTarget, dailyLimit);
 
+        // MUTUAL EXCLUSION
+        if (window.clearAllStates) window.clearAllStates();
+
         chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
             if (tabs[0]) {
                 // 1. Check URL & Auto-Redirect
@@ -95,6 +98,7 @@ if (startConnectBtn) {
                     // Save state BEFORE redirect for auto-resume
                     chrome.storage.local.set({
                         connectRunning: true,
+                        autoConnectRunning: true, // Legacy support
                         connectSettings: { delay: delayVal, limit: dailyTarget }
                     });
 
@@ -122,6 +126,7 @@ if (startConnectBtn) {
                 // Save persistence state BEFORE attempting connection
                 chrome.storage.local.set({
                     autoConnectRunning: true,
+                    connectRunning: true, // Consistent Flag
                     connectSettings: { delay: delayVal, limit: dailyTarget }
                 });
 

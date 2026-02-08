@@ -35,6 +35,9 @@ if (startBtn) {
             settings[field] = el.type === 'checkbox' ? el.checked : el.value;
         });
 
+        // MUTUAL EXCLUSION
+        if (window.clearAllStates) window.clearAllStates();
+
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
                 const currentUrl = tabs[0].url;
