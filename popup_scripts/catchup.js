@@ -13,28 +13,30 @@ if (startCatchUpBtn) {
         // MUTUAL EXCLUSION
         if (window.clearAllStates) window.clearAllStates();
 
+        // 1. Get Settings
+        const type = catchUpType ? catchUpType.value : 'all';
+        const limitInput = document.getElementById('catchUpLimit');
+        const limit = parseInt(limitInput ? limitInput.value : 200, 10) || 200;
+
+        // 2. Save Settings & Running State (For Persistence)
+        chrome.storage.local.set({
+            catchUpRunning: true,
+            catchUpSettings: { type, limit }
+        });
+
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
-                // 1. Check URL and Redirect if needed
+                // 3. Check URL and Redirect if needed
                 if (!tabs[0].url.includes('mynetwork/catch-up')) {
                     const targetUrl = 'https://www.linkedin.com/mynetwork/catch-up/all/';
                     chrome.tabs.update(tabs[0].id, { url: targetUrl });
 
                     const logItem = document.createElement('div');
                     logItem.style.color = '#e6b800'; // Orange/Yellow
-                    logItem.innerText = "[CATCH-UP] Redirecting to 'Catch-Up' page... Please click Start again once page loads. 🚀";
+                    logItem.innerText = "[CATCH-UP] Redirecting to 'Catch-Up' page... Will auto-resume in 4s! 🚀";
                     logDisplay.appendChild(logItem);
                     return;
                 }
-
-                // PERSISTENCE: Save state so we can resume if redirected
-                const type = catchUpType.value;
-                const limit = parseInt(document.getElementById('catchUpLimit').value, 10) || 200;
-
-                chrome.storage.local.set({
-                    catchUpRunning: true,
-                    catchUpSettings: { type, limit }
-                });
 
                 const logItem = document.createElement('div');
                 logItem.innerText = `[CATCH-UP] 🚀 Starting! Type: ${type}, Limit: ${limit}`;
