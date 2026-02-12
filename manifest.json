@@ -30,7 +30,9 @@
                 "https://www.linkedin.com/jobs/*",
                 "https://www.linkedin.com/mynetwork/*",
                 "https://www.linkedin.com/search/*",
-                "https://www.linkedin.com/in/*"
+                "https://www.linkedin.com/in/*",
+                "https://www.linkedin.com/messaging/*",
+                "https://www.linkedin.com/feed/*"
             ],
             "js": [
                 "utils.js",
@@ -43,5 +45,12 @@
                 "content.js"
             ]
         }
-    ]
+    ],
+    "minimum_chrome_version": "88",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "linkedin-automator@amank.temp.id",
+            "strict_min_version": "109.0"
+        }
+    }
 }
